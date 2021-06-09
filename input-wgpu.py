@@ -9,6 +9,7 @@ import pandas as pd
 ###############################################################################
 
 import openmc
+import json
 
 basepath = "20210605-100k-evonly"
 particles = 100000
@@ -35,6 +36,15 @@ if not os.path.exists(basepath):
         os.mkdir(os.path.join(evpath, "full-{:02d}".format(age)))
         os.mkdir(os.path.join(fspath, "full-{:02d}".format(age)))
 
+# dump basic settings to json file
+with open(os.path.join(basepath, "calculation.json"), 'w') as f:
+    json.dump({'ages': ages,
+               'geometries': geometries,
+               'particles': particles,
+               'basepath': basepath,
+               'cspath': cspath},
+              f)
+    f.close()
     
 ###############################################################################
 # Materials
