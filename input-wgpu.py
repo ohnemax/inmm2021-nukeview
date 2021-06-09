@@ -330,21 +330,44 @@ for age in ages:
 
 bounds = [-pitOR, -pitOR, -pitOR, pitOR, pitOR, pitOR]
 uniform_dist = openmc.stats.Box(bounds[:3], bounds[3:], only_fissionable=True)
-src = openmc.Source(space = uniform_dist, particle = 'neutron')
+evsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
+
 
 settings = openmc.Settings()
 settings.run_mode = 'eigenvalue'
 settings.batches = 120
 settings.inactive = 20
 settings.particles = particles
-settings.source = src
 
+settings.source = evsrc
 for geo in geometries:
-    settings.export_to_xml(os.path.join(fspath, geo, "settings.xml"))
     settings.export_to_xml(os.path.join(evpath, geo, "settings.xml"))
 for age in ages:
-    settings.export_to_xml(os.path.join(fspath, "full-{:02d}".format(age)))
     settings.export_to_xml(os.path.join(evpath, "full-{:02d}".format(age)))
 
+settings.run_mode = 'fixed source'
 
-#openmc.data.atomic_mass('Fe54')
+fssrc = []
+for iso in pudf.index:
+    tmpsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
+    tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
+    tmpsrc.strength = pudf.loc[iso, 'sfneutrons'] * pudf.loc[iso, 'wo']
+    fssrc.append(tmpsrc)
+    
+settings.source = fssrc
+for geo in geometries:
+    settings.export_to_xml(os.path.join(fspath, geo, "settings.xml"))
+
+for age in ages:
+    fssrc = []
+    for iso in pudf.index:
+        tmpsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
+        tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
+        tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * pudf.loc[iso, 'wo']
+        fssrc.append(tmpsrc)
+        settings.source = fssrc
+    
+        settings.export_to_xml(os.path.join(fspath, "full-{:02d}".format(age)))
+
+
+
