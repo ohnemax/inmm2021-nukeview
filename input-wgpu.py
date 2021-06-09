@@ -11,7 +11,7 @@ import pandas as pd
 import openmc
 import json
 
-basepath = "20210605-100k-evonly"
+basepath = "20210609-100k"
 particles = 100000
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
