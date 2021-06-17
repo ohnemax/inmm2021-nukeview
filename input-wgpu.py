@@ -363,11 +363,16 @@ for age in ages:
     for iso in pudf.index:
         tmpsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
         tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
-        tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * pudf.loc[iso, 'wo']
+        tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo']
         fssrc.append(tmpsrc)
         settings.source = fssrc
     
         settings.export_to_xml(os.path.join(fspath, "full-{:02d}".format(age)))
 
-
+mass = 4000        
+for age in ages:
+    sourcesum = 0
+    for iso in pudf.index:
+        sourcesum += puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo']
+    print("A 4kg WPu weapon ({:d} years old) emits {:f} neutrons/s".format(age, sourcesum * 4000))
 
