@@ -346,7 +346,8 @@ for age in ages:
     settings.export_to_xml(os.path.join(evpath, "full-{:02d}".format(age)))
 
 settings.run_mode = 'fixed source'
-
+settings.inactive = 0
+settings.batches = 100
 fssrc = []
 for iso in pudf.index:
     tmpsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
