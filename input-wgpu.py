@@ -349,10 +349,12 @@ settings.run_mode = 'fixed source'
 settings.inactive = 0
 settings.batches = 100
 fssrc = []
+
+normalizationconstant = sum(pudf['sfneutrons'] * pudf['wo'])
 for iso in pudf.index:
     tmpsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
     tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
-    tmpsrc.strength = pudf.loc[iso, 'sfneutrons'] * pudf.loc[iso, 'wo']
+    tmpsrc.strength = pudf.loc[iso, 'sfneutrons'] * pudf.loc[iso, 'wo'] / normalizationconstant
     fssrc.append(tmpsrc)
     
 settings.source = fssrc
@@ -361,10 +363,12 @@ for geo in geometries:
 
 for age in ages:
     fssrc = []
+    subset = puagedf.loc[(slice(None), age), :]
+    normalizationconstant = sum(subset['wo'] * subset['sfneutrons'])
     for iso in pudf.index:
         tmpsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
         tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
-        tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo']
+        tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo'] / normalizationconstant
         fssrc.append(tmpsrc)
         settings.source = fssrc
     
