@@ -4,8 +4,8 @@ import os
 import matplotlib.pyplot as plt
 import math
 
-basepath = "sost-20210626-100k"
-particles = 100000
+basepath = "sost-20210701"
+particles = 1
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
 
