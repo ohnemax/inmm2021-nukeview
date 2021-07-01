@@ -285,7 +285,7 @@ lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[2
 lowerlevelwallcells[-1].name = "Auxiliary Wall low"
 
 lowerlevelwallcells.append(openmc.Cell())
-lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[20] & -surfaces[180] & +surfaces[1100] & -surfaces[1110]
+lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[30] & -surfaces[180] & +surfaces[1100] & -surfaces[1110]
 lowerlevelwallcells[-1].name = "Auxiliary Wall outer"
 
 # add auxiliary doors
