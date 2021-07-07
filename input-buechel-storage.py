@@ -6,7 +6,7 @@ import math
 import numpy as np
 import sys
 
-basepath = "bust-20210703"
+basepath = "bust-20210707"
 particles = 1
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
@@ -461,7 +461,7 @@ source = openmc.Source(space = openmc.stats.Point((sourcex, sourcey, sourcez)),
 settings = openmc.Settings()
 settings.run_mode = 'fixed source'
 settings.inactive = 0
-settings.batches = 1
+settings.batches = 10
 settings.particles = particles
 settings.source = source
 
