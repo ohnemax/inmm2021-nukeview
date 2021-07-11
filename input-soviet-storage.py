@@ -632,7 +632,7 @@ source = openmc.Source(space = openmc.stats.Point((sourcex, sourcey, sourcez)),
 settings = openmc.Settings()
 settings.run_mode = 'fixed source'
 settings.inactive = 0
-settings.batches = 100
+settings.batches = 10
 settings.particles = particles
 settings.source = source
 
