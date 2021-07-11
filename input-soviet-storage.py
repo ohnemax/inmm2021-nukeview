@@ -3,8 +3,9 @@ import json
 import os
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
-basepath = "sost-20210701"
+basepath = "sost-20210711"
 particles = 1
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
@@ -20,6 +21,24 @@ with open(os.path.join(basepath, "calculation.json"), 'w') as f:
               f)
     f.close()
 
+def planeparameter3points(p1, p2, p3):
+    if len(p1) != 3 and len(p2) != 3 and len(p3) != 3:
+        print("All points need 3 dimensions")
+        raise RuntimeError()
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    p3 = np.array(p3)
+
+    v1 = p3 - p1
+    v2 = p2 - p1
+
+    cp = np.cross(v1, v2)
+    a, b, c = cp
+
+    d = np.dot(cp, p3)
+
+    return (a, b, c, d)
+    
 ###############################################################################
 # Materials
 ###############################################################################
@@ -55,7 +74,14 @@ airMat.add_element('N', 0.755268, 'wo')
 airMat.add_element('O', 0.231781, 'wo')
 airMat.add_element('Ar', 0.012827, 'wo')
 
-materiallist = [steelMat, concreteRegularMat, wallMat, airMat]
+soilMat = openmc.Material(name='Earth, Typical Western US')
+soilMat.set_density('g/cm3', 1.52) # PNNL Compendium p.118 (references Brewer 2009, which has a density of 5.5g/cm3)
+soilMat.add_element('H', 0.316855, 'ao')
+soilMat.add_element('O', 0.501581, 'ao')
+soilMat.add_element('Al', 0.039951, 'ao')
+soilMat.add_element('Si', 0.141613, 'ao')
+
+materiallist = [steelMat, concreteRegularMat, wallMat, airMat, soilMat]
 materials = openmc.Materials(materiallist)
 materials.cross_sections = cspath
 materials.export_to_xml(os.path.join(basepath, "materials.xml"))
@@ -93,7 +119,7 @@ surfaces = {}
 
 # x surfaces for lower level (main)
 surfaceincrements = {1: 0,
-                     0: distp,
+                     5: distp,
                      10: thickA,
                      20: distl,
                      30: thickA,
@@ -129,7 +155,7 @@ surfaces[1].boundary_type = 'vacuum'
 surfaces[220].boundary_type = 'vacuum'
 
 # Special surfaces for doors
-surfaces[2] = openmc.XPlane(surfaces[0].x0 + thickD, surface_id = 2)
+surfaces[2] = openmc.XPlane(surfaces[5].x0 + thickD, surface_id = 2)
 surfaces[28] = openmc.XPlane(surfaces[30].x0 - thickD, surface_id = 28)
 surfaces[182] = openmc.XPlane(surfaces[180].x0 + thickD, surface_id = 182)
 surfaces[208] = openmc.XPlane(surfaces[210].x0 - thickD, surface_id = 208)
@@ -142,6 +168,10 @@ surfaces[117] = openmc.XPlane(surfaces[120].x0 - thickF, surface_id = 117)
 surfaces[133] = openmc.XPlane(surfaces[130].x0 + thickF, surface_id = 133)    
 surfaces[157] = openmc.XPlane(surfaces[160].x0 - thickF, surface_id = 157)    
 surfaces[173] = openmc.XPlane(surfaces[170].x0 + thickF, surface_id = 173)    
+
+# surfaces for outer soil
+surfaces[15] = openmc.XPlane(surfaces[20].x0 - disth, surface_id = 15)
+surfaces[195] = openmc.XPlane(surfaces[190].x0 + disth, surface_id = 195)
 
 # x surfaces for lower level (auxiliary)
 
@@ -203,11 +233,31 @@ for sid, inc in surfaceincrements.items():
 surfaces[2000].boundary_type = 'vacuum'
 surfaces[2090].boundary_type = 'vacuum'
 
+a, b, c, d = planeparameter3points([surfaces[20].x0, surfaces[1000].y0, surfaces[2040].z0 + disth],
+                                   [surfaces[30].x0, surfaces[1000].y0, surfaces[2040].z0 + disth],
+                                   [surfaces[20].x0, surfaces[1020].y0, surfaces[2070].z0 + disth])
+surfaces[2200] = openmc.Plane(a, b, c, d, surface_id = 2200)
+
+a, b, c, d = planeparameter3points([surfaces[20].x0, surfaces[1090].y0, surfaces[2070].z0 + disth],
+                                   [surfaces[30].x0, surfaces[1090].y0, surfaces[2070].z0 + disth],
+                                   [surfaces[20].x0, surfaces[1110].y0, surfaces[2040].z0 + disth])
+surfaces[2210] = openmc.Plane(a, b, c, d, surface_id = 2210)
+
+a, b, c, d = planeparameter3points([surfaces[20].x0, surfaces[1000].y0 - (surfaces[2040].z0 + disth), 0],
+                                   [surfaces[30].x0, surfaces[1000].y0 - (surfaces[2040].z0 + disth), 0],
+                                   [surfaces[20].x0, surfaces[1000].y0, surfaces[2040].z0 + disth])
+surfaces[2220] = openmc.Plane(a, b, c, d, surface_id = 2220)
+
+a, b, c, d = planeparameter3points([surfaces[20].x0, surfaces[1110].y0 + (surfaces[2040].z0 + disth), 0],
+                                   [surfaces[30].x0, surfaces[1110].y0 + (surfaces[2040].z0 + disth), 0],
+                                   [surfaces[20].x0, surfaces[1110].y0, surfaces[2040].z0 + disth])
+surfaces[2230] = openmc.Plane(a, b, c, d, surface_id = 2230)
+
 
 # cells: base concrete
 baseconcretecells = []
 baseconcretecells.append(openmc.Cell())
-baseconcretecells[-1].region = +surfaces[2000] & -surfaces[2010] & +surfaces[0] & -surfaces[20] & +surfaces[1020] & -surfaces[1090]
+baseconcretecells[-1].region = +surfaces[2000] & -surfaces[2010] & +surfaces[5] & -surfaces[20] & +surfaces[1020] & -surfaces[1090]
 baseconcretecells[-1].name = "Base Concrete Wing I"
 
 baseconcretecells.append(openmc.Cell())
@@ -221,7 +271,7 @@ baseconcretecells[-1].name = "Base Concrete Wing II"
 # cells: lower level concrete walls
 lowerlevelwallcells = []
 lowerlevelwallcells.append(openmc.Cell())
-lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[0] & -surfaces[10] & +surfaces[1020] & -surfaces[1090]
+lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[5] & -surfaces[10] & +surfaces[1020] & -surfaces[1090]
 lowerlevelwallcells[-1].name = "Wing I Wall low"
 
 lowerlevelwallcells.append(openmc.Cell())
@@ -313,12 +363,12 @@ lowerlevelwallcells.append(openmc.Cell())
 lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[200] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
 lowerlevelwallcells[-1].name = "Wing I Wall high"
 
-region_columnauxiliarylowouter = +surfaces[2020] & -surfaces[2060] & +surfaces[0] & -surfaces[10] & +surfaces[1070] & -surfaces[1080]
+region_columnauxiliarylowouter = +surfaces[2020] & -surfaces[2060] & +surfaces[5] & -surfaces[10] & +surfaces[1070] & -surfaces[1080]
 region_columnauxiliarylowinner = +surfaces[2020] & -surfaces[2060] & +surfaces[20] & -surfaces[30] & +surfaces[1070] & -surfaces[1080]
 region_columnauxiliaryhighinner = +surfaces[2020] & -surfaces[2060] & +surfaces[180] & -surfaces[190] & +surfaces[1070] & -surfaces[1080]
 region_columnauxiliaryhighouter = +surfaces[2020] & -surfaces[2060] & +surfaces[200] & -surfaces[210] & +surfaces[1070] & -surfaces[1080]
 
-region_columnweaponlowouter = +surfaces[2020] & -surfaces[2060] & +surfaces[0] & -surfaces[10] & +surfaces[1030] & -surfaces[1040]
+region_columnweaponlowouter = +surfaces[2020] & -surfaces[2060] & +surfaces[5] & -surfaces[10] & +surfaces[1030] & -surfaces[1040]
 region_columnweaponlowinner = +surfaces[2020] & -surfaces[2060] & +surfaces[20] & -surfaces[30] & +surfaces[1030] & -surfaces[1040]
 region_columnweaponhighinner = +surfaces[2020] & -surfaces[2060] & +surfaces[180] & -surfaces[190] & +surfaces[1030] & -surfaces[1040]
 region_columnweaponhighouter = +surfaces[2020] & -surfaces[2060] & +surfaces[200] & -surfaces[210] & +surfaces[1030] & -surfaces[1040]
@@ -358,11 +408,11 @@ upperlevelwallcells[-1].region = region_columnweaponhighouter
 upperlevelwallcells[-1].name = "Column Weapon High Outer"
 
 upperlevelwallcells.append(openmc.Cell())
-upperlevelwallcells[-1].region = +surfaces[2020] & -surfaces[2060] & +surfaces[0] & -surfaces[210] & +surfaces[1020] & -surfaces[1030]
+upperlevelwallcells[-1].region = +surfaces[2020] & -surfaces[2060] & +surfaces[5] & -surfaces[210] & +surfaces[1020] & -surfaces[1030]
 upperlevelwallcells[-1].name = "Wall Weapon Side"
 
 upperlevelwallcells.append(openmc.Cell())
-upperlevelwallcells[-1].region = +surfaces[2020] & -surfaces[2060] & +surfaces[0] & -surfaces[210] & +surfaces[1080] & -surfaces[1090]
+upperlevelwallcells[-1].region = +surfaces[2020] & -surfaces[2060] & +surfaces[5] & -surfaces[210] & +surfaces[1080] & -surfaces[1090]
 upperlevelwallcells[-1].name = "Wall Auxiliary Side"
 
 upperlevelroofcells = []
@@ -375,7 +425,7 @@ upperlevelroofcells[-1].region = +surfaces[2020] & -surfaces[2040] & +surfaces[2
 upperlevelroofcells[-1].name = "Auxiliary Roof"
 
 upperlevelroofcells.append(openmc.Cell())
-upperlevelroofcells[-1].region = (+surfaces[2020] & -surfaces[2030] & +surfaces[0] & -surfaces[70] & +surfaces[1030] & -surfaces[1080]) & ~region_columnauxiliarylowouter & ~region_columnauxiliarylowinner & ~region_columnweaponlowouter & ~region_columnweaponlowinner
+upperlevelroofcells[-1].region = (+surfaces[2020] & -surfaces[2030] & +surfaces[5] & -surfaces[70] & +surfaces[1030] & -surfaces[1080]) & ~region_columnauxiliarylowouter & ~region_columnauxiliarylowinner & ~region_columnweaponlowouter & ~region_columnweaponlowinner
 upperlevelroofcells[-1].name = "Floor low"
 
 upperlevelroofcells.append(openmc.Cell())
@@ -383,12 +433,12 @@ upperlevelroofcells[-1].region = (+surfaces[2020] & -surfaces[2030] & +surfaces[
 upperlevelroofcells[-1].name = "Floor high"
 
 upperlevelroofcells.append(openmc.Cell())
-upperlevelroofcells[-1].region = +surfaces[2060] & -surfaces[2070] & +surfaces[0] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
+upperlevelroofcells[-1].region = +surfaces[2060] & -surfaces[2070] & +surfaces[5] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
 upperlevelroofcells[-1].name = "Upper Roof"
 
 doors = []
 doors.append(openmc.Cell())
-doors[-1].region = +surfaces[2030] & -surfaces[2060] & +surfaces[0] & -surfaces[2] & +surfaces[1040] & -surfaces[1070]
+doors[-1].region = +surfaces[2030] & -surfaces[2060] & +surfaces[5] & -surfaces[2] & +surfaces[1040] & -surfaces[1070]
 doors[-1].name = "Main Door low"
 
 doors.append(openmc.Cell())
@@ -419,10 +469,48 @@ doors.append(openmc.Cell())
 doors[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[157] &-surfaces[173] & +surfaces[1030] & -surfaces[1032]
 doors[-1].name = "Weapon Door high"
 
+soilcells = []
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2040] & +surfaces[2200] & +surfaces[20] & -surfaces[190] & +surfaces[1000] & -surfaces[1020]
+soilcells[-1].name = "Weapon Area soil cover"
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2040] & +surfaces[2210] & +surfaces[20] & -surfaces[190] & +surfaces[1090] & -surfaces[1110]
+soilcells[-1].name = "Auxiliary Area soil cover"
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2000] & +surfaces[2220] & +surfaces[5] & -surfaces[210] & -surfaces[1000]
+soilcells[-1].name = "Weapon Area soil right dam"
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2000] & -surfaces[2230] & +surfaces[5] & -surfaces[210] & +surfaces[1110]
+soilcells[-1].name = "Auxiliary Area soil left dam"
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2000] & +surfaces[2200] & +surfaces[5] & -surfaces[20] & +surfaces[1000] & -surfaces[1020]
+soilcells[-1].name = "Weapon Area low dam"
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2000] & +surfaces[2210] & +surfaces[5] & -surfaces[20] & +surfaces[1090] & -surfaces[1110]
+soilcells[-1].name = "Auxiliary Area low dam"
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2000] & +surfaces[2200] & +surfaces[190] & -surfaces[210] & +surfaces[1000] & -surfaces[1020]
+soilcells[-1].name = "Weapon Area high dam"
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2000] & +surfaces[2210] & +surfaces[190] & -surfaces[210] & +surfaces[1090] & -surfaces[1110]
+soilcells[-1].name = "Auxiliary Area high dam"
+
+soilcells.append(openmc.Cell())
+soilcells[-1].region = +surfaces[2070] & -surfaces[2080] & +surfaces[5] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
+soilcells[-1].name = "Center Area cover"
+
 
 airCellBox = (+surfaces[2000] & -surfaces[2090] & +surfaces[1] & -surfaces[220] & +surfaces[990] & -surfaces[1120])
 limitedAirCellBox = airCellBox
-for cell in baseconcretecells + lowerlevelwallcells + upperlevelroofcells + upperlevelwallcells + doors:
+for cell in baseconcretecells + lowerlevelwallcells + upperlevelroofcells + upperlevelwallcells + doors + soilcells:
     limitedAirCellBox &= ~cell.region
     
 airCell = openmc.Cell()
@@ -443,12 +531,16 @@ for cell in upperlevelroofcells:
 
 for cell in doors:
     cell.fill = steelMat
-    
+
+for cell in soilcells:
+    cell.fill = soilMat
+
 cells = baseconcretecells \
     + lowerlevelwallcells \
     + upperlevelwallcells \
     + upperlevelroofcells \
     + doors \
+    + soilcells \
     + [airCell]
     
 root = openmc.Universe(cells = cells)
@@ -459,6 +551,8 @@ geometry.export_to_xml(os.path.join(basepath, "geometry.xml"))
 # print("Plotting geometry - can take a few seconds")
 # xfactor = 1.2
 # yfactor = 1.2
+# zfactor = 1.2
+
 # plt.figure(figsize=(8, 8))
 # root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + 1), width=(xwidth * xfactor, ywidth * yfactor))
 # plt.title("Lower Level floor plan")
@@ -494,6 +588,33 @@ geometry.export_to_xml(os.path.join(basepath, "geometry.xml"))
 #           color_by='material')
 # plt.title("Upper Level doors floor plan")
 # plt.savefig(os.path.join(basepath, "floor-plan-doors-upper-level-material.png"))
+
+# yfactor = 1.5
+# plt.figure(figsize=(8, 8))
+# root.plot(origin = ((surfaces[20].x0 + surfaces[30].x0) / 2, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
+#           basis = ('yz'),
+#           width=(ywidth * yfactor, zwidth * zfactor),
+#           color_by='cell')
+# plt.title("Cut through soil")
+# plt.savefig(os.path.join(basepath, "front-with-top-soil.png"))
+
+# yfactor = 1.5
+# plt.figure(figsize=(8, 8))
+# root.plot(origin = (surfaces[15].x0, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
+#           basis = ('yz'),
+#           width=(ywidth * yfactor, zwidth * zfactor),
+#           color_by='cell')
+# plt.title("Cut through soil")
+# plt.savefig(os.path.join(basepath, "front-with-top-soil-low.png"))
+
+# yfactor = 1.5
+# plt.figure(figsize=(8, 8))
+# root.plot(origin = (surfaces[195].x0, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
+#           basis = ('yz'),
+#           width=(ywidth * yfactor, zwidth * zfactor),
+#           color_by='cell')
+# plt.title("Cut through soil")
+# plt.savefig(os.path.join(basepath, "front-with-top-soil-high.png"))
 
 ###############################################################################
 # Source & Settings
