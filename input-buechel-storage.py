@@ -6,7 +6,7 @@ import math
 import numpy as np
 import sys
 
-basepath = "bust-20210707"
+basepath = "bust-20210712"
 particles = 1
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
@@ -478,16 +478,19 @@ ywidth = ymax - ymin
 zwidth = zmax - zmin
 
 xstep = 100
-xmax = math.ceil(xwidth / 100) * 100 + 1
+tallyxmin = math.floor(xmin / xstep) * xstep
+tallyxmax = math.ceil(xmax / xstep) * xstep + 1
 ystep = 100
-ymax = math.ceil(ywidth / 100) * 100 + 1
+tallyymin = math.floor(ymin / ystep) * ystep
+tallyymax = math.ceil(ymax / ystep) * ystep + 1
 zstep = 100
-zmax = math.ceil(zwidth / 100) * 100 + 1
+tallyzmin = math.floor(zmin / zstep) * zstep
+tallyzmax = math.ceil(zmax / zstep) * zstep + 1
 
 mainmesh = openmc.RectilinearMesh(name = "Main Mesh")
-mainmesh.x_grid = range(0, xmax, xstep)
-mainmesh.y_grid = range(0, ymax, ystep)
-mainmesh.z_grid = range(0, zmax, zstep)
+mainmesh.x_grid = range(tallyxmin, tallyxmax, xstep)
+mainmesh.y_grid = range(tallyymin, tallyymax, ystep)
+mainmesh.z_grid = range(tallyzmin, tallyzmax, zstep)
 
 meshfilter = openmc.MeshFilter(mainmesh)
 tally = openmc.Tally(name = "flux")
