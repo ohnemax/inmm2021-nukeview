@@ -7,9 +7,14 @@ import matplotlib
 import math
 import copy
 
-basepath = "sost-20210626-100k"
-basepath = "cluster-results/sost-20210626-run-1M"
-basepath = "cluster-results/sost-20210711-run-50M-g"
+if len(sys.argv) == 3:
+    basepath = sys.argv[1]
+    batches = int(sys.argv[2])
+else:
+    basepath = "sost-20210626-100k"
+    basepath = "cluster-results/sost-20210626-run-1M"
+    basepath = "cluster-results/sost-20210711-run-50M-g"
+    batches = 10
 
 with open(os.path.join(basepath, "calculation.json"), 'r') as f:
     calcsettings = json.load(f)

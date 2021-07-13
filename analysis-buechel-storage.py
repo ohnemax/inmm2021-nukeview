@@ -6,15 +6,20 @@ from matplotlib.colors import LogNorm
 import matplotlib
 import math
 import copy
+import sys
 
-basepath = "cluster-results/bust-20210707-run1-50M-g"
-basepath = "bust-20210712-run-1M"
+if len(sys.argv) == 3:
+    basepath = sys.argv[1]
+    batches = int(sys.argv[2])
+else:
+    basepath = "cluster-results/bust-20210707-run1-50M-g"
+    basepath = "bust-20210712-run-1M"
+    batches = 10
 
 with open(os.path.join(basepath, "calculation.json"), 'r') as f:
     calcsettings = json.load(f)
     f.close()
 
-batches = 10
 sp = openmc.StatePoint(os.path.join(basepath, "statepoint.{:d}.h5".format(batches)))
 tally = sp.get_tally(scores=['flux'])
 #flux = tally.get_slice(scores=['flux'])
