@@ -11,18 +11,21 @@ import helper
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
 
-basepath = "bust-20210714-fetter"
+basepath = "bust-20210714-point"
 fettersource = False
 particles = 1
 batches = 10
 plot = False
 weaponage = 0 # years
+survival = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--fetter", action="store_true",
                     help="add fetter model as source")
 parser.add_argument("-p", "--plot", action="store_true",
                     help="plot some cuts through the geometry")
+parser.add_argument("-s", "--survival", action="store_true",
+                    help="turn on survival biasing")
 parser.add_argument("-b", "--basepath", 
                     help="set basepath for calculation")
 args = parser.parse_args()
@@ -30,6 +33,8 @@ if args.fetter:
     fettersource = True
 if args.plot:
     plot = True
+if args.survival:
+    survival = True
 if not args.basepath is None:
     basepath = args.basepath
 
@@ -650,6 +655,8 @@ settings.run_mode = 'fixed source'
 settings.inactive = 0
 settings.batches = batches
 settings.particles = particles
+if survival:
+    settings.survival_biasing = True
 settings.source = source
 
 settings.export_to_xml(os.path.join(basepath, "settings.xml"))
