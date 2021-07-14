@@ -4,11 +4,39 @@ import os
 import matplotlib.pyplot as plt
 import math
 import numpy as np
+import sys
+import argparse
 
-basepath = "sost-20210711"
-particles = 1
+import helper
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
+
+basepath = "sost-20210711"
+fettersource = False
+particles = 1
+batches = 10
+plot = False
+weaponage = 0
+survival = False
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--fetter", action="store_true",
+                    help="add fetter model as source")
+parser.add_argument("-p", "--plot", action="store_true",
+                    help="plot some cuts through the geometry")
+parser.add_argument("-s", "--survival", action="store_true",
+                    help="turn on survival biasing")
+parser.add_argument("-b", "--basepath", 
+                    help="set basepath for calculation")
+args = parser.parse_args()
+if args.fetter:
+    fettersource = True
+if args.plot:
+    plot = True
+if args.survival:
+    survival = True
+if not args.basepath is None:
+    basepath = args.basepath
 
 if not os.path.exists(basepath):
     os.mkdir(basepath)
@@ -17,28 +45,13 @@ if not os.path.exists(basepath):
 with open(os.path.join(basepath, "calculation.json"), 'w') as f:
     json.dump({'particles': particles,
                'basepath': basepath,
-               'cspath': cspath},
+               'cspath': cspath,
+               'batches': batches,
+               'fettersource': fettersource,
+               'weaponage': weaponage},
               f)
     f.close()
 
-def planeparameter3points(p1, p2, p3):
-    if len(p1) != 3 and len(p2) != 3 and len(p3) != 3:
-        print("All points need 3 dimensions")
-        raise RuntimeError()
-    p1 = np.array(p1)
-    p2 = np.array(p2)
-    p3 = np.array(p3)
-
-    v1 = p3 - p1
-    v2 = p2 - p1
-
-    cp = np.cross(v1, v2)
-    a, b, c = cp
-
-    d = np.dot(cp, p3)
-
-    return (a, b, c, d)
-    
 ###############################################################################
 # Materials
 ###############################################################################
@@ -81,7 +94,63 @@ soilMat.add_element('O', 0.501581, 'ao')
 soilMat.add_element('Al', 0.039951, 'ao')
 soilMat.add_element('Si', 0.141613, 'ao')
 
+#*******************************************************************************
+# fetter model
+
+# need pit radius already here
+pitOR = 5
+pitThickness = 0.75
+pitIR = pitOR - pitThickness
+
+puvec = helper.puvector()
+puvec.setwo('Pu238', 0.00005)
+puvec.setwo('Pu239', 0.993)
+puvec.setwo('Pu240', 0.060)
+puvec.setwo('Pu241', 0.0044)
+puvec.setwo('Pu242', 0.00015)
+puvec.setwo('Am241', 0)
+ages = [weaponage]
+puvec.createagedvector(ages)
+
+pudf = puvec.pudf
+puagedf = puvec.puagedf
+
+wpuRho = 4000 / (4/3 * np.pi * (pitOR ** 3 - pitIR ** 3)) # density based on Fetter Model volume / mass
+wpuMat = {}
+for age in ages:
+    wpuMat[age] = openmc.Material(name = "Weapon-grade Plutonium - {:02d} years old".format(age))
+    wpuMat[age].set_density("g/cm3", wpuRho)
+    wpuMat[age].add_nuclide("Pu238", puagedf.loc[('Pu238', age), 'wo'], "wo")
+    wpuMat[age].add_nuclide("Pu239", puagedf.loc[('Pu239', age), 'wo'], "wo")
+    wpuMat[age].add_nuclide("Pu240", puagedf.loc[('Pu240', age), 'wo'], "wo") #should be wo all along
+    wpuMat[age].add_nuclide("Pu241", puagedf.loc[('Pu241', age), 'wo'], "wo") # need to consider for decay!
+    wpuMat[age].add_nuclide("Pu242", puagedf.loc[('Pu242', age), 'wo'], "wo")
+    wpuMat[age].add_nuclide("Am241", puagedf.loc[('Am241', age), 'wo'], "wo")
+    wpuMat[age].add_element("O", 0.002, "wo")
+
+berMat = openmc.Material(name = "Beryllium Reflector")
+berMat.set_density("g/cm3", 1.848) #PNNL Compendium page 37
+berMat.add_element("Be", 1)
+
+tunMat = openmc.Material(name = "Tungsten Tamper")
+tunMat.set_density("g/cm3", 19.3) #PNNL Compendium page 318
+tunMat.add_element("W", 1)
+
+hmxMat = openmc.Material(name = "HMX explosive")
+hmxMat.set_density("g/cm3", 1.890) #PNNL Compendium page 125
+hmxMat.add_element("H", 0.285714, "ao")
+hmxMat.add_element("C", 0.142857, "ao")
+hmxMat.add_element("N", 0.285714, "ao")
+hmxMat.add_element("O", 0.285714, "ao")
+
+aluMat = openmc.Material(name = "Aluminum Case")
+aluMat.set_density("g/cm3", 2.6989) #PNNL Compendium page 20
+aluMat.add_element("Al", 1)
+
 materiallist = [steelMat, concreteRegularMat, wallMat, airMat, soilMat]
+if fettersource:
+    materiallist = materiallist + [wpuMat[weaponage], berMat, tunMat, hmxMat, aluMat]
+
 materials = openmc.Materials(materiallist)
 materials.cross_sections = cspath
 materials.export_to_xml(os.path.join(basepath, "materials.xml"))
@@ -120,6 +189,7 @@ surfaces = {}
 # x surfaces for lower level (main)
 surfaceincrements = {1: 0,
                      5: distp,
+                     7: disth,
                      10: thickA,
                      20: distl,
                      30: thickA,
@@ -141,6 +211,7 @@ surfaceincrements = {1: 0,
                      190: thickA,
                      200: distl,
                      210: thickA,
+                     215: disth,
                      220: distp
 }
 xwidth = sum(surfaceincrements.values()) 
@@ -177,7 +248,8 @@ surfaces[195] = openmc.XPlane(surfaces[190].x0 + disth, surface_id = 195)
 
 # y surfaces for lower level (main)
 surfaceincrements = {990: 0,
-                     1000: distp,
+                     995: distp,
+                     1000: disth,
                      1010: thickA,
                      1020: diste,
                      1030: thickA,
@@ -189,6 +261,7 @@ surfaceincrements = {990: 0,
                      1090: thickA,
                      1100: distm,
                      1110: thickA,
+                     1115: disth,
                      1120: distp
 }
 ywidth = sum(surfaceincrements.values()) 
@@ -233,22 +306,22 @@ for sid, inc in surfaceincrements.items():
 surfaces[2000].boundary_type = 'vacuum'
 surfaces[2090].boundary_type = 'vacuum'
 
-a, b, c, d = planeparameter3points([surfaces[20].x0, surfaces[1000].y0, surfaces[2040].z0 + disth],
+a, b, c, d = helper.planeparameter3points([surfaces[20].x0, surfaces[1000].y0, surfaces[2040].z0 + disth],
                                    [surfaces[30].x0, surfaces[1000].y0, surfaces[2040].z0 + disth],
                                    [surfaces[20].x0, surfaces[1020].y0, surfaces[2070].z0 + disth])
 surfaces[2200] = openmc.Plane(a, b, c, d, surface_id = 2200)
 
-a, b, c, d = planeparameter3points([surfaces[20].x0, surfaces[1090].y0, surfaces[2070].z0 + disth],
+a, b, c, d = helper.planeparameter3points([surfaces[20].x0, surfaces[1090].y0, surfaces[2070].z0 + disth],
                                    [surfaces[30].x0, surfaces[1090].y0, surfaces[2070].z0 + disth],
                                    [surfaces[20].x0, surfaces[1110].y0, surfaces[2040].z0 + disth])
 surfaces[2210] = openmc.Plane(a, b, c, d, surface_id = 2210)
 
-a, b, c, d = planeparameter3points([surfaces[20].x0, surfaces[1000].y0 - (surfaces[2040].z0 + disth), 0],
+a, b, c, d = helper.planeparameter3points([surfaces[20].x0, surfaces[1000].y0 - (surfaces[2040].z0 + disth), 0],
                                    [surfaces[30].x0, surfaces[1000].y0 - (surfaces[2040].z0 + disth), 0],
                                    [surfaces[20].x0, surfaces[1000].y0, surfaces[2040].z0 + disth])
 surfaces[2220] = openmc.Plane(a, b, c, d, surface_id = 2220)
 
-a, b, c, d = planeparameter3points([surfaces[20].x0, surfaces[1110].y0 + (surfaces[2040].z0 + disth), 0],
+a, b, c, d = helper.planeparameter3points([surfaces[20].x0, surfaces[1110].y0 + (surfaces[2040].z0 + disth), 0],
                                    [surfaces[30].x0, surfaces[1110].y0 + (surfaces[2040].z0 + disth), 0],
                                    [surfaces[20].x0, surfaces[1110].y0, surfaces[2040].z0 + disth])
 surfaces[2230] = openmc.Plane(a, b, c, d, surface_id = 2230)
@@ -535,6 +608,84 @@ for cell in doors:
 for cell in soilcells:
     cell.fill = soilMat
 
+#*******************************************************************************
+# fetter model
+
+# Pit
+
+cenSurface = openmc.Sphere(r = pitIR)
+cenCell = openmc.Cell()
+cenCell.region = -cenSurface
+cenCell.name = "Center of weapon"
+
+pitSurface = openmc.Sphere(r = pitOR)
+pitCell = openmc.Cell()
+pitCell.region = +cenSurface & -pitSurface
+pitCell.name = "Pit"
+
+# Reflector
+refThickness = 2
+refOR = pitOR + refThickness
+
+refSurface = openmc.Sphere(r = refOR)
+refCell = openmc.Cell()
+refCell.region = +pitSurface & -refSurface
+refCell.name = "Reflector"
+
+# Tamper
+tamThickness = 3
+tamOR = refOR + tamThickness
+
+tamSurface = openmc.Sphere(r = tamOR)
+tamCell = openmc.Cell()
+tamCell.region = +refSurface & -tamSurface
+tamCell.name = "Tamper"
+
+# Explosive
+expThickness = 10
+expOR = tamOR + expThickness
+
+expSurface = openmc.Sphere(r = expOR)
+expCell = openmc.Cell()
+expCell.region = +tamSurface & -expSurface
+expCell.name = "Conventional Explosive"
+
+# Aluminum Case
+aluThickness = 1
+aluOR = expOR + aluThickness
+
+aluSurface = openmc.Sphere(r = aluOR)
+aluCell = openmc.Cell()
+aluCell.region = +expSurface & -aluSurface
+aluCell.name = "Aluminum Case"
+
+weaponairCell = openmc.Cell()
+weaponairCell.region = +aluSurface
+weaponairCell.name = "Air around weapon"
+
+pitCell.fill = wpuMat[weaponage] 
+refCell.fill = berMat
+tamCell.fill = tunMat
+expCell.fill = hmxMat
+aluCell.fill = aluMat
+weaponairCell.fill = airMat
+
+
+#*******************************************************************************
+# cells & universes + source location
+
+if fettersource:
+    sourcex = surfaces[30].x0 + 50
+    sourcey = surfaces[1010].y0 + 50
+    sourcez = surfaces[2010].z0 + 50
+
+    weaponsurface = openmc.Sphere(r = aluOR + 1, x0 = sourcex, y0 = sourcey, z0 = sourcez) # slightly bigger to avoid particles getting 'trapped' between universes, reaching MAX_EVENTS
+    airCell.region &= +weaponsurface
+else:
+    sourcex = surfaces[30].x0 + 50
+    sourcey = surfaces[1010].y0 + 50
+    sourcez = surfaces[2010].z0 + 50
+
 cells = baseconcretecells \
     + lowerlevelwallcells \
     + upperlevelwallcells \
@@ -542,98 +693,158 @@ cells = baseconcretecells \
     + doors \
     + soilcells \
     + [airCell]
-    
 root = openmc.Universe(cells = cells)
+
+if fettersource:
+    fettercells = [cenCell, pitCell, refCell, tamCell, expCell, aluCell, airCell]
+    fetteruniverse = openmc.Universe(cells = fettercells)
+
+    weaponcell = openmc.Cell(fill = fetteruniverse, region = -weaponsurface)
+    weaponcell.translation = (sourcex, sourcey, sourcez)
+    root.add_cell(weaponcell)
+
 geometry = openmc.Geometry(root)
 geometry.export_to_xml(os.path.join(basepath, "geometry.xml"))
 
 # Plot
-# print("Plotting geometry - can take a few seconds")
-# xfactor = 1.2
-# yfactor = 1.2
-# zfactor = 1.2
+if plot:
+    print("Plotting geometry - can take a few seconds")
 
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + 1), width=(xwidth * xfactor, ywidth * yfactor))
-# plt.title("Lower Level floor plan")
-# plt.savefig(os.path.join(basepath, "floor-plan-lower-level.png"))
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (sourcex, sourcey, sourcez),
+              basis=('xz'),
+              width=(300, 300),
+              pixels=(600, 600),
+              seed = 1)
+    plt.title("Source View (xz)")
+    plt.savefig(os.path.join(basepath, "source-view-xz.png"))
+    plt.close()
 
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + distf + 1), width=(xwidth * xfactor, ywidth * yfactor))
-# plt.title("Upper Level floor plan")
-# plt.savefig(os.path.join(basepath, "floor-plan-upper-level.png"))
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (sourcex, sourcey, sourcez),
+              basis=('xy'),
+              width=(300, 300),
+              pixels=(600, 600),
+              seed = 1)
+    plt.title("Source View (xy)")
+    plt.savefig(os.path.join(basepath, "source-view-xy.png"))
+    plt.close()
 
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + distf + thickC + 1), width=(xwidth * xfactor, ywidth * yfactor))
-# plt.title("Upper Level doors floor plan")
-# plt.savefig(os.path.join(basepath, "floor-plan-doors-upper-level.png"))
+    xfactor = 1.2
+    yfactor = 1.2
+    zfactor = 1.2
 
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + 1),
-#           width=(xwidth * xfactor, ywidth * yfactor),
-#           color_by='material')
-# plt.title("Lower Level floor plan")
-# plt.savefig(os.path.join(basepath, "floor-plan-lower-level-material.png"))
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + 1),
+              width=(xwidth * xfactor, ywidth * yfactor),
+              seed = 1)
+    plt.title("Lower Level floor plan")
+    plt.savefig(os.path.join(basepath, "floor-plan-lower-level.png"))
+    plt.close()
 
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + distf + 1),
-#           width=(xwidth * xfactor, ywidth * yfactor),
-#           color_by='material')
-# plt.title("Upper Level floor plan")
-# plt.savefig(os.path.join(basepath, "floor-plan-upper-level-material.png"))
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + distf + 1),
+              width=(xwidth * xfactor, ywidth * yfactor),
+              seed = 1)
+    plt.title("Upper Level floor plan")
+    plt.savefig(os.path.join(basepath, "floor-plan-upper-level.png"))
+    plt.close()
 
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + distf + thickC + 1),
-#           width=(xwidth * xfactor, ywidth * yfactor),
-#           color_by='material')
-# plt.title("Upper Level doors floor plan")
-# plt.savefig(os.path.join(basepath, "floor-plan-doors-upper-level-material.png"))
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + distf + thickC + 1),
+              width=(xwidth * xfactor, ywidth * yfactor),
+              seed = 1)
+    plt.title("Upper Level doors floor plan")
+    plt.savefig(os.path.join(basepath, "floor-plan-doors-upper-level.png"))
+    plt.close()
 
-# yfactor = 1.5
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = ((surfaces[20].x0 + surfaces[30].x0) / 2, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
-#           basis = ('yz'),
-#           width=(ywidth * yfactor, zwidth * zfactor),
-#           color_by='cell')
-# plt.title("Cut through soil")
-# plt.savefig(os.path.join(basepath, "front-with-top-soil.png"))
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + 1),
+              width=(xwidth * xfactor, ywidth * yfactor),
+              color_by='material')
+    plt.title("Lower Level floor plan")
+    plt.savefig(os.path.join(basepath, "floor-plan-lower-level-material.png"))
+    plt.close()
 
-# yfactor = 1.5
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = (surfaces[15].x0, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
-#           basis = ('yz'),
-#           width=(ywidth * yfactor, zwidth * zfactor),
-#           color_by='cell')
-# plt.title("Cut through soil")
-# plt.savefig(os.path.join(basepath, "front-with-top-soil-low.png"))
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + distf + 1),
+              width=(xwidth * xfactor, ywidth * yfactor),
+              color_by='material',
+              seed = 1)
+    plt.title("Upper Level floor plan")
+    plt.savefig(os.path.join(basepath, "floor-plan-upper-level-material.png"))
+    plt.close()
 
-# yfactor = 1.5
-# plt.figure(figsize=(8, 8))
-# root.plot(origin = (surfaces[195].x0, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
-#           basis = ('yz'),
-#           width=(ywidth * yfactor, zwidth * zfactor),
-#           color_by='cell')
-# plt.title("Cut through soil")
-# plt.savefig(os.path.join(basepath, "front-with-top-soil-high.png"))
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0 + xwidth / 2, 0 + ywidth / 2, thickA + distf + thickC + 1),
+              width=(xwidth * xfactor, ywidth * yfactor),
+              color_by='material',
+              seed = 1)
+    plt.title("Upper Level doors floor plan")
+    plt.savefig(os.path.join(basepath, "floor-plan-doors-upper-level-material.png"))
+    plt.close()
 
+    yfactor = 1.5
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = ((surfaces[20].x0 + surfaces[30].x0) / 2, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
+              basis = ('yz'),
+              width=(ywidth * yfactor, zwidth * zfactor),
+              color_by='cell',
+              seed = 1)
+    plt.title("Cut through soil")
+    plt.savefig(os.path.join(basepath, "front-with-top-soil.png"))
+    plt.close()
+
+    yfactor = 1.5
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (surfaces[15].x0, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
+              basis = ('yz'),
+              width=(ywidth * yfactor, zwidth * zfactor),
+              color_by='cell',
+              seed = 1)
+    plt.title("Cut through soil")
+    plt.savefig(os.path.join(basepath, "front-with-top-soil-low.png"))
+    plt.close()
+
+    yfactor = 1.5
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (surfaces[195].x0, (surfaces[1090].y0 + surfaces[1020].y0)/ 2, surfaces[2040].z0),
+              basis = ('yz'),
+              width=(ywidth * yfactor, zwidth * zfactor),
+              color_by='cell',
+              seed = 1)
+    plt.title("Cut through soil")
+    plt.savefig(os.path.join(basepath, "front-with-top-soil-high.png"))
+    plt.close()
+    
 ###############################################################################
 # Source & Settings
 ###############################################################################
 
-sourcex = surfaces[30].x0 + 50
-sourcey = surfaces[1010].y0 + 50
-sourcez = surfaces[2010].z0 + 50
-
-source = openmc.Source(space = openmc.stats.Point((sourcex, sourcey, sourcez)),
-                       energy = openmc.stats.Discrete([2e6], [1]),
-                       particle = 'neutron')
-
+if fettersource:
+    bounds = [sourcex - pitOR, sourcey - pitOR, sourcez - pitOR,
+              sourcex + pitOR, sourcey + pitOR, sourcez + pitOR]
+    uniform_dist = openmc.stats.Box(bounds[:3], bounds[3:], only_fissionable=True)
+    subset = puagedf.loc[(slice(None), weaponage), :]
+    normalizationconstant = sum(subset['wo'] * subset['sfneutrons'])
+    source = []
+    for iso in pudf.index:
+        tmpsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
+        tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
+        tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo'] / normalizationconstant
+        source.append(tmpsrc)
+else:
+    source = openmc.Source(space = openmc.stats.Point((sourcex, sourcey, sourcez)),
+                           energy = openmc.stats.Discrete([2e6], [1]),
+                           particle = 'neutron')
 
 settings = openmc.Settings()
 settings.run_mode = 'fixed source'
 settings.inactive = 0
 settings.batches = 10
 settings.particles = particles
+if survival:
+    settings.survival_biasing = True
 settings.source = source
 
 settings.export_to_xml(os.path.join(basepath, "settings.xml"))
