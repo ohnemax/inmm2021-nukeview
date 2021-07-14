@@ -5,16 +5,33 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 import sys
+import argparse
+
 import helper
 
+cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
+
 basepath = "bust-20210714-fetter"
-fettersource = True
+fettersource = False
 particles = 1
 batches = 10
-plot = True
+plot = False
 weaponage = 0 # years
 
-cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--fetter", action="store_true",
+                    help="add fetter model as source")
+parser.add_argument("-p", "--plot", action="store_true",
+                    help="plot some cuts through the geometry")
+parser.add_argument("-b", "--basepath", 
+                    help="set basepath for calculation")
+args = parser.parse_args()
+if args.fetter:
+    fettersource = True
+if args.plot:
+    plot = True
+if not args.basepath is None:
+    basepath = args.basepath
 
 if not os.path.exists(basepath):
     os.mkdir(basepath)
@@ -558,7 +575,7 @@ if plot:
               seed = 1)
     plt.title("Source View (xz)")
     plt.savefig(os.path.join(basepath, "source-view-xz.png"))
-    plt.clf()
+    plt.close()
 
     plt.figure(figsize=(8, 8))
     root.plot(origin = (sourcex, sourcey, sourcez),
@@ -568,19 +585,19 @@ if plot:
               seed = 1)
     plt.title("Source View (xy)")
     plt.savefig(os.path.join(basepath, "source-view-xy.png"))
-    plt.clf()
+    plt.close()
     
     plt.figure(figsize=(8, 8))
     root.plot(origin = (0, 1, (zmax - zmin) / 2), basis=('xz'), width=((xmax - xmin) * xfactor, (zmax - zmin) * zfactor), seed = 1)
     plt.title("Front View")
     plt.savefig(os.path.join(basepath, "front-view.png"))
-    plt.clf()
+    plt.close()
 
     plt.figure(figsize=(8, 8))
     root.plot(origin = (0, pasd4 + vaultt1 + vaultd3 / 2, (zmax - zmin) / 2), basis=('xz'), width=((xmax - xmin) * xfactor, (zmax - zmin) * zfactor), seed = 1)
     plt.title("Front View, Vault position")
     plt.savefig(os.path.join(basepath, "front-view-vault.png"))
-    plt.clf()
+    plt.close()
 
     plt.figure(figsize=(8, 8))
     root.plot(origin = (0, ymin + (ymax - ymin) / 2, pash4 + pash1 + 1),
@@ -588,7 +605,7 @@ if plot:
               width=((xmax - xmin) * xfactor, (ymax - ymin) * yfactor))
     plt.title("Top View, Floor Level")
     plt.savefig(os.path.join(basepath, "top-view-floor-level.png"))
-    plt.clf()
+    plt.close()
 
     for z in range(math.ceil(zmin / 100), math.ceil(zmax / 100)):
         plt.figure(figsize=(8, 8))
@@ -598,13 +615,13 @@ if plot:
                   seed = 1)
         plt.title("Top View, Floor Level, z = {:03d}m".format(z))
         plt.savefig(os.path.join(basepath, "top-view-floor-level-{:03d}.png".format(z)))
-        plt.clf()
+        plt.close()
 
     plt.figure(figsize=(8, 8))
     root.plot(origin = (pasw3 + vaultd5 / 2, pasd4 + vaultt1 + vaultt2 * 1.5, pash4 + pash1 - (vaultd1 + vaultt1) / 2), basis=('xz'), width=(vaultd5 * xfactor, (vaultd1 + vaultt1) * zfactor), seed = 1)
     plt.title("Vault Front View")
     plt.savefig(os.path.join(basepath, "vault-front-view.png"))
-    plt.clf()
+    plt.close()
 
 
 ###############################################################################
