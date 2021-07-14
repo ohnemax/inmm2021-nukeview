@@ -7,8 +7,12 @@ import numpy as np
 import sys
 import helper
 
-basepath = "bust-20210712"
+basepath = "bust-20210714-fetter"
+fettersource = True
 particles = 1
+batches = 10
+plot = True
+weaponage = 0 # years
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
 
@@ -19,7 +23,10 @@ if not os.path.exists(basepath):
 with open(os.path.join(basepath, "calculation.json"), 'w') as f:
     json.dump({'particles': particles,
                'basepath': basepath,
-               'cspath': cspath},
+               'cspath': cspath,
+               'batches': batches,
+               'fettersource': fettersource,
+               'weaponage': weaponage},
               f)
     f.close()
 
@@ -65,7 +72,63 @@ soilMat.add_element('O', 0.501581, 'ao')
 soilMat.add_element('Al', 0.039951, 'ao')
 soilMat.add_element('Si', 0.141613, 'ao')
 
+#*******************************************************************************
+# fetter model
+
+# need pit radius already here
+pitOR = 5
+pitThickness = 0.75
+pitIR = pitOR - pitThickness
+
+puvec = helper.puvector()
+puvec.setwo('Pu238', 0.00005)
+puvec.setwo('Pu239', 0.993)
+puvec.setwo('Pu240', 0.060)
+puvec.setwo('Pu241', 0.0044)
+puvec.setwo('Pu242', 0.00015)
+puvec.setwo('Am241', 0)
+ages = [weaponage]
+puvec.createagedvector(ages)
+
+pudf = puvec.pudf
+puagedf = puvec.puagedf
+
+wpuRho = 4000 / (4/3 * np.pi * (pitOR ** 3 - pitIR ** 3)) # density based on Fetter Model volume / mass
+wpuMat = {}
+for age in ages:
+    wpuMat[age] = openmc.Material(name = "Weapon-grade Plutonium - {:02d} years old".format(age))
+    wpuMat[age].set_density("g/cm3", wpuRho)
+    wpuMat[age].add_nuclide("Pu238", puagedf.loc[('Pu238', age), 'wo'], "wo")
+    wpuMat[age].add_nuclide("Pu239", puagedf.loc[('Pu239', age), 'wo'], "wo")
+    wpuMat[age].add_nuclide("Pu240", puagedf.loc[('Pu240', age), 'wo'], "wo") #should be wo all along
+    wpuMat[age].add_nuclide("Pu241", puagedf.loc[('Pu241', age), 'wo'], "wo") # need to consider for decay!
+    wpuMat[age].add_nuclide("Pu242", puagedf.loc[('Pu242', age), 'wo'], "wo")
+    wpuMat[age].add_nuclide("Am241", puagedf.loc[('Am241', age), 'wo'], "wo")
+    wpuMat[age].add_element("O", 0.002, "wo")
+
+berMat = openmc.Material(name = "Beryllium Reflector")
+berMat.set_density("g/cm3", 1.848) #PNNL Compendium page 37
+berMat.add_element("Be", 1)
+
+tunMat = openmc.Material(name = "Tungsten Tamper")
+tunMat.set_density("g/cm3", 19.3) #PNNL Compendium page 318
+tunMat.add_element("W", 1)
+
+hmxMat = openmc.Material(name = "HMX explosive")
+hmxMat.set_density("g/cm3", 1.890) #PNNL Compendium page 125
+hmxMat.add_element("H", 0.285714, "ao")
+hmxMat.add_element("C", 0.142857, "ao")
+hmxMat.add_element("N", 0.285714, "ao")
+hmxMat.add_element("O", 0.285714, "ao")
+
+aluMat = openmc.Material(name = "Aluminum Case")
+aluMat.set_density("g/cm3", 2.6989) #PNNL Compendium page 20
+aluMat.add_element("Al", 1)
+
 materiallist = [steelMat, concreteRegularMat, wallMat, airMat, soilMat]
+if fettersource:
+    materiallist = materiallist + [wpuMat[weaponage], berMat, tunMat, hmxMat, aluMat]
+
 materials = openmc.Materials(materiallist)
 materials.cross_sections = cspath
 materials.export_to_xml(os.path.join(basepath, "materials.xml"))
@@ -345,7 +408,7 @@ vaultair.region =\
     ~vaultpoles[3].region & ~vaultpoles[4].region
 vaultair.fill = airMat
 vaultair.name = "Vault Air"
-vaultcells.append(vaultair)
+#vaultcells.append(vaultair)
 
 margincells = []
 pasregion = +surfaces[10] & -surfaces[50] & +surfaces[1010] & -surfaces[1050]
@@ -383,28 +446,141 @@ for i in [1, 2, 3, 4]:
     marginair[i].name = "Margin - Air"
     margincells.append(marginair[i])
 
-cells = pascells + vaultcells + margincells
-#cells = margincells
 
+#*******************************************************************************
+# fetter model
+
+# Pit
+
+cenSurface = openmc.Sphere(r = pitIR)
+cenCell = openmc.Cell()
+cenCell.region = -cenSurface
+cenCell.name = "Center of weapon"
+
+pitSurface = openmc.Sphere(r = pitOR)
+pitCell = openmc.Cell()
+pitCell.region = +cenSurface & -pitSurface
+pitCell.name = "Pit"
+
+# Reflector
+refThickness = 2
+refOR = pitOR + refThickness
+
+refSurface = openmc.Sphere(r = refOR)
+refCell = openmc.Cell()
+refCell.region = +pitSurface & -refSurface
+refCell.name = "Reflector"
+
+# Tamper
+tamThickness = 3
+tamOR = refOR + tamThickness
+
+tamSurface = openmc.Sphere(r = tamOR)
+tamCell = openmc.Cell()
+tamCell.region = +refSurface & -tamSurface
+tamCell.name = "Tamper"
+
+# Explosive
+expThickness = 10
+expOR = tamOR + expThickness
+
+expSurface = openmc.Sphere(r = expOR)
+expCell = openmc.Cell()
+expCell.region = +tamSurface & -expSurface
+expCell.name = "Conventional Explosive"
+
+# Aluminum Case
+aluThickness = 1
+aluOR = expOR + aluThickness
+
+aluSurface = openmc.Sphere(r = aluOR)
+aluCell = openmc.Cell()
+aluCell.region = +expSurface & -aluSurface
+aluCell.name = "Aluminum Case"
+
+airCell = openmc.Cell()
+airCell.region = +aluSurface
+airCell.name = "Air around weapon"
+
+pitCell.fill = wpuMat[weaponage] 
+refCell.fill = berMat
+tamCell.fill = tunMat
+expCell.fill = hmxMat
+aluCell.fill = aluMat
+airCell.fill = airMat
+
+#*******************************************************************************
+# cells & universes + source location
+
+if fettersource:
+    # Source in lower vault compartment, at center line of one weapon
+    sourcex = surfaces[3000].x0 + vaultd5 / 4
+    # fetter model in center of vault
+    sourcey = surfaces[3110].y0 + vaultd3 / 4
+    sourcez = surfaces[3210].z0 + vaultd2 / 2
+    # make space in vault
+    weaponsurface = openmc.Sphere(r = aluOR + 1, x0 = sourcex, y0 = sourcey, z0 = sourcez) # slightly bigger to avoid particles getting 'trapped' between universes, reaching MAX_EVENTS
+    vaultair.region &= +weaponsurface
+else:
+    # Source in lower vault compartment, at center line of one weapon
+    sourcex = surfaces[3000].x0 + vaultd5 / 4
+    sourcey = surfaces[3110].y0 + vaultt2 + weapondiameter / 2
+    sourcez = surfaces[3210].z0 + vaultd2 / 2
+
+vaultcells.append(vaultair)
+cells = pascells + vaultcells + margincells
 root = openmc.Universe(cells = cells)
+
+if fettersource:
+    fettercells = [cenCell, pitCell, refCell, tamCell, expCell, aluCell, airCell]
+    fetteruniverse = openmc.Universe(cells = fettercells)
+
+    weaponcell = openmc.Cell(fill = fetteruniverse, region = -weaponsurface)
+    weaponcell.translation = (sourcex, sourcey, sourcez)
+    root.add_cell(weaponcell)
+
 geometry = openmc.Geometry(root)
 geometry.export_to_xml(os.path.join(basepath, "geometry.xml"))
 
+#*******************************************************************************
 # Plot
-if len(sys.argv) > 1:
+if plot:
     print("Plotting geometry - can take a few seconds")
     xfactor = 1.2
     yfactor = 1.2
     zfactor = 1.2
-    plt.figure(figsize=(8, 8))
-    root.plot(origin = (0, 1, (zmax - zmin) / 2), basis=('xz'), width=((xmax - xmin) * xfactor, (zmax - zmin) * zfactor))
-    plt.title("Front View")
-    plt.savefig(os.path.join(basepath, "front-view.png"))
 
     plt.figure(figsize=(8, 8))
-    root.plot(origin = (0, pasd4 + vaultt1 + vaultd3 / 2, (zmax - zmin) / 2), basis=('xz'), width=((xmax - xmin) * xfactor, (zmax - zmin) * zfactor))
+    root.plot(origin = (sourcex, sourcey, sourcez),
+              basis=('xz'),
+              width=(300, 300),
+              pixels=(600, 600),
+              seed = 1)
+    plt.title("Source View (xz)")
+    plt.savefig(os.path.join(basepath, "source-view-xz.png"))
+    plt.clf()
+
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (sourcex, sourcey, sourcez),
+              basis=('xy'),
+              width=(300, 300),
+              pixels=(600, 600),
+              seed = 1)
+    plt.title("Source View (xy)")
+    plt.savefig(os.path.join(basepath, "source-view-xy.png"))
+    plt.clf()
+    
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0, 1, (zmax - zmin) / 2), basis=('xz'), width=((xmax - xmin) * xfactor, (zmax - zmin) * zfactor), seed = 1)
+    plt.title("Front View")
+    plt.savefig(os.path.join(basepath, "front-view.png"))
+    plt.clf()
+
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0, pasd4 + vaultt1 + vaultd3 / 2, (zmax - zmin) / 2), basis=('xz'), width=((xmax - xmin) * xfactor, (zmax - zmin) * zfactor), seed = 1)
     plt.title("Front View, Vault position")
     plt.savefig(os.path.join(basepath, "front-view-vault.png"))
+    plt.clf()
 
     plt.figure(figsize=(8, 8))
     root.plot(origin = (0, ymin + (ymax - ymin) / 2, pash4 + pash1 + 1),
@@ -412,39 +588,50 @@ if len(sys.argv) > 1:
               width=((xmax - xmin) * xfactor, (ymax - ymin) * yfactor))
     plt.title("Top View, Floor Level")
     plt.savefig(os.path.join(basepath, "top-view-floor-level.png"))
+    plt.clf()
 
     for z in range(math.ceil(zmin / 100), math.ceil(zmax / 100)):
         plt.figure(figsize=(8, 8))
         root.plot(origin = (0, ymin + (ymax - ymin) / 2, z * 100),
                   basis=('xy'),
-                  width=((xmax - xmin) * xfactor, (ymax - ymin) * yfactor))
+                  width=((xmax - xmin) * xfactor, (ymax - ymin) * yfactor),
+                  seed = 1)
         plt.title("Top View, Floor Level, z = {:03d}m".format(z))
         plt.savefig(os.path.join(basepath, "top-view-floor-level-{:03d}.png".format(z)))
+        plt.clf()
 
     plt.figure(figsize=(8, 8))
-    root.plot(origin = (pasw3 + vaultd5 / 2, pasd4 + vaultt1 + vaultt2 * 1.5, pash4 + pash1 - (vaultd1 + vaultt1) / 2), basis=('xz'), width=(vaultd5 * xfactor, (vaultd1 + vaultt1) * zfactor))
+    root.plot(origin = (pasw3 + vaultd5 / 2, pasd4 + vaultt1 + vaultt2 * 1.5, pash4 + pash1 - (vaultd1 + vaultt1) / 2), basis=('xz'), width=(vaultd5 * xfactor, (vaultd1 + vaultt1) * zfactor), seed = 1)
     plt.title("Vault Front View")
     plt.savefig(os.path.join(basepath, "vault-front-view.png"))
+    plt.clf()
 
 
 ###############################################################################
 # Source & Settings
 ###############################################################################
 
-# Source in lower vault compartment, at center line of one weapon
-sourcex = surfaces[3000].x0 + vaultd5 / 4
-sourcey = surfaces[3110].y0 + vaultt2 + weapondiameter / 2
-sourcez = surfaces[3210].z0 + vaultd2 / 2
-
-source = openmc.Source(space = openmc.stats.Point((sourcex, sourcey, sourcez)),
-                       energy = openmc.stats.Discrete([2e6], [1]),
-                       particle = 'neutron')
-
+if fettersource:
+    bounds = [sourcex - pitOR, sourcey - pitOR, sourcez - pitOR,
+              sourcex + pitOR, sourcey + pitOR, sourcez + pitOR]
+    uniform_dist = openmc.stats.Box(bounds[:3], bounds[3:], only_fissionable=True)
+    subset = puagedf.loc[(slice(None), weaponage), :]
+    normalizationconstant = sum(subset['wo'] * subset['sfneutrons'])
+    source = []
+    for iso in pudf.index:
+        tmpsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
+        tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
+        tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo'] / normalizationconstant
+        source.append(tmpsrc)
+else:
+    source = openmc.Source(space = openmc.stats.Point((sourcex, sourcey, sourcez)),
+                           energy = openmc.stats.Discrete([2e6], [1]),
+                           particle = 'neutron')
 
 settings = openmc.Settings()
 settings.run_mode = 'fixed source'
 settings.inactive = 0
-settings.batches = 10
+settings.batches = batches
 settings.particles = particles
 settings.source = source
 
