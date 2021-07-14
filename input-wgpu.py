@@ -13,6 +13,8 @@ import json
 
 basepath = "20210617-100k"
 particles = 100000
+import helper
+
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
 ages = [0, 5, 10, 15, 20, 25, 30, 35, 40]
@@ -55,35 +57,17 @@ pitOR = 5
 pitThickness = 0.75
 pitIR = pitOR - pitThickness
 
+puvec = helper.puvector()
+puvec.setwo('Pu238', 0.00005)
+puvec.setwo('Pu239', 0.993)
+puvec.setwo('Pu240', 0.060)
+puvec.setwo('Pu241', 0.0044)
+puvec.setwo('Pu242', 0.00015)
+puvec.setwo('Am241', 0)
+puvec.createagedvector(ages)
 
-pudict = {'name': ['Pu238', 'Pu239', 'Pu240', 'Pu241', 'Pu242', 'Am241'],
-          'wo': [0.00005, 0.933, 0.060, 0.0044, 0.00015, 0], # Fetter et al. 1990
-          'sfneutrons': [2630, 0.0152, 1031, 0.001723, 1722, 1.47], # PhD Thesis Moritz
-          'watt-a': [1.17948e-6, 1.12963e-6, 1.25797e-6, 1.18698e-6, 1.22078e-6, 1.07179e-6], # Verbeke et al. 2010
-          'watt-b': [4.16933e-6, 3.80269e-6, 4.68927e-6, 4.15150e-6, 4.36668e-6, 3.46195e-6]} # Verbeke et al. 2010
-pudict['mass'] = [openmc.data.atomic_mass(iso) for iso in pudict['name']]
-pudf = pd.DataFrame(pudict)
-pudf.set_index('name', inplace = True)
-
-puagedf = pd.DataFrame(columns = ['name', 'age', 'wo', 'sfneutrons', 'watt-a', 'watt-b'])
-
-# all times in years
-lbda = np.log(2)/14.329 # T_1/2 from PhD Thesis Moritz
-totmol = sum(pudf['wo'] / pudf['mass']) + 0.002 / openmc.data.atomic_weight('O')
-
-Npu0 = pudf.loc['Pu241', 'wo'] / openmc.data.atomic_mass('Pu241') / totmol 
-for age in ages:
-    agelist = [age] * 6
-    Npu = Npu0 * np.exp(-lbda * age)
-    Nam = Npu0 * (1 - np.exp(-lbda * age))
-    puadict = copy.deepcopy(pudict)
-    puadict['wo'][3] = Npu * totmol * openmc.data.atomic_mass('Pu241')
-    puadict['wo'][5] = Nam * totmol * openmc.data.atomic_mass('Am241')
-    puadict['age'] = agelist
-
-    puagedf = pd.concat([puagedf, pd.DataFrame(puadict)])
-    
-puagedf.set_index(['name', 'age'], inplace=True)
+pudf = puvec.pudf
+puagedf = puvec.puagedf
 
 wpuRho = 4000 / (4/3 * np.pi * (pitOR ** 3 - pitIR ** 3)) # density based on Fetter Model volume / mass
 wpuMat = {}

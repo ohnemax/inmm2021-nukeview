@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 import sys
+import helper
 
 basepath = "bust-20210712"
 particles = 1
@@ -21,24 +22,6 @@ with open(os.path.join(basepath, "calculation.json"), 'w') as f:
                'cspath': cspath},
               f)
     f.close()
-
-def planeparameter3points(p1, p2, p3):
-    if len(p1) != 3 and len(p2) != 3 and len(p3) != 3:
-        print("All points need 3 dimensions")
-        raise RuntimeError()
-    p1 = np.array(p1)
-    p2 = np.array(p2)
-    p3 = np.array(p3)
-
-    v1 = p3 - p1
-    v2 = p2 - p1
-
-    cp = np.cross(v1, v2)
-    a, b, c = cp
-
-    d = np.dot(cp, p3)
-
-    return (a, b, c, d)
 
 ###############################################################################
 # Materials
@@ -160,13 +143,13 @@ surfaces[2040] = openmc.YCylinder(r=pasr1, surface_id = 2040)
 surfaces[2050] = openmc.ZPlane(zmax, surface_id = 2050)
 
 # left inclined plane
-a, b, c, d = planeparameter3points([-pasw2, 0, pash4 + pash1],
+a, b, c, d = helper.planeparameter3points([-pasw2, 0, pash4 + pash1],
                                    [-pasw2, pasd2, pash4 + pash1],
                                    [-pasw1, 0, pash4 + pash1 + pash3])
 surfaces[2060] = openmc.Plane(a, b, c, d, surface_id = 2060)
 
 # right inclined plane
-a, b, c, d = planeparameter3points([pasw2, 0, pash4 + pash1],
+a, b, c, d = helper.planeparameter3points([pasw2, 0, pash4 + pash1],
                                    [pasw1, 0, pash4 + pash1 + pash3],
                                    [pasw2, pasd2, pash4 + pash1])
 surfaces[2070] = openmc.Plane(a, b, c, d, surface_id = 2070)
