@@ -11,10 +11,11 @@ import pandas as pd
 import openmc
 import json
 
-basepath = "20210617-100k"
-particles = 100000
 import helper
 
+basepath = "20210723"
+particles = 1
+batches = 100
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
 ages = [0, 5, 10, 15, 20, 25, 30, 35, 40]
@@ -44,7 +45,8 @@ with open(os.path.join(basepath, "calculation.json"), 'w') as f:
                'geometries': geometries,
                'particles': particles,
                'basepath': basepath,
-               'cspath': cspath},
+               'cspath': cspath,
+               'batches': batches},
               f)
     f.close()
     
@@ -319,7 +321,7 @@ evsrc = openmc.Source(space = uniform_dist, particle = 'neutron')
 
 settings = openmc.Settings()
 settings.run_mode = 'eigenvalue'
-settings.batches = 120
+settings.batches = batches + 20
 settings.inactive = 20
 settings.particles = particles
 
@@ -331,7 +333,7 @@ for age in ages:
 
 settings.run_mode = 'fixed source'
 settings.inactive = 0
-settings.batches = 100
+settings.batches = batches
 fssrc = []
 
 normalizationconstant = sum(pudf['sfneutrons'] * pudf['wo'])
