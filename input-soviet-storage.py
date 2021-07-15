@@ -696,7 +696,7 @@ cells = baseconcretecells \
 root = openmc.Universe(cells = cells)
 
 if fettersource:
-    fettercells = [cenCell, pitCell, refCell, tamCell, expCell, aluCell, airCell]
+    fettercells = [cenCell, pitCell, refCell, tamCell, expCell, aluCell, weaponairCell]
     fetteruniverse = openmc.Universe(cells = fettercells)
 
     weaponcell = openmc.Cell(fill = fetteruniverse, region = -weaponsurface)
