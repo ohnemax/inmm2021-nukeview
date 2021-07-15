@@ -10,15 +10,45 @@ import pandas as pd
 
 import openmc
 import json
+import argparse
+
+
 
 import helper
 
-basepath = "20210723"
-particles = 1
-batches = 100
+
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
+basepath = "fetter-20210715"
+particles = 1
+batches = 100
 ages = [0, 5, 10, 15, 20, 25, 30, 35, 40]
+ages = [float(a) for a in ages]
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-p", "--plot", action="store_true",
+                    help="plot some cuts through the geometry")
+parser.add_argument("-b", "--basepath", 
+                    help="set basepath for calculation")
+parser.add_argument("-c", "--batches", type = int,
+                    help="set number of batches")
+parser.add_argument("-n", "--particles", type = int,
+                    help="set number of particles")
+parser.add_argument("-a", "--ages",
+                    help="set ages for weapon in calculation")
+
+args = parser.parse_args()
+if not args.basepath is None:
+    basepath = args.basepath
+if not args.ages is None:
+    stringages = args.ages.split()
+    ages = [float(a) for a in stringages]
+if not args.batches is None:
+    batches = args.batches
+if not args.particles is None:
+    particles = args.particles
+if args.plot:
+    plot = True
 
 geometries = ["pit-outer",
               "ref-outer",
@@ -36,8 +66,8 @@ if not os.path.exists(basepath):
         os.mkdir(os.path.join(evpath, geo))
         os.mkdir(os.path.join(fspath, geo))
     for age in ages:
-        os.mkdir(os.path.join(evpath, "full-{:02d}".format(age)))
-        os.mkdir(os.path.join(fspath, "full-{:02d}".format(age)))
+        os.mkdir(os.path.join(evpath, "full-{:.2f}".format(age)))
+        os.mkdir(os.path.join(fspath, "full-{:.2f}".format(age)))
 
 # dump basic settings to json file
 with open(os.path.join(basepath, "calculation.json"), 'w') as f:
@@ -74,7 +104,7 @@ puagedf = puvec.puagedf
 wpuRho = 4000 / (4/3 * np.pi * (pitOR ** 3 - pitIR ** 3)) # density based on Fetter Model volume / mass
 wpuMat = {}
 for age in ages:
-    wpuMat[age] = openmc.Material(name = "Weapon-grade Plutonium - {:02d} years old".format(age))
+    wpuMat[age] = openmc.Material(name = "Weapon-grade Plutonium - {:.2f} years old".format(age))
     wpuMat[age].set_density("g/cm3", wpuRho)
     wpuMat[age].add_nuclide("Pu238", puagedf.loc[('Pu238', age), 'wo'], "wo")
     wpuMat[age].add_nuclide("Pu239", puagedf.loc[('Pu239', age), 'wo'], "wo")
@@ -124,8 +154,8 @@ for age in ages:
                     berMat, tunMat, hmxMat, aluMat, airMat]
     materials = openmc.Materials(materiallist)
     materials.cross_sections = cspath
-    materials.export_to_xml(os.path.join(evpath, "full-{:02d}".format(age), "materials.xml"))
-    materials.export_to_xml(os.path.join(fspath, "full-{:02d}".format(age), "materials.xml"))
+    materials.export_to_xml(os.path.join(evpath, "full-{:.2f}".format(age), "materials.xml"))
+    materials.export_to_xml(os.path.join(fspath, "full-{:.2f}".format(age), "materials.xml"))
 
 
 ###############################################################################
@@ -229,8 +259,8 @@ for age in ages:
     cells = [cenCell, pitCell, refCell, tamCell, expCell, aluCell, outCell]
     root = openmc.Universe(cells = cells)
     geometry = openmc.Geometry(root)
-    geometry.export_to_xml(os.path.join(evpath, "full-{:02d}".format(age), "geometry.xml"))
-    geometry.export_to_xml(os.path.join(fspath, "full-{:02d}".format(age), "geometry.xml"))
+    geometry.export_to_xml(os.path.join(evpath, "full-{:.2f}".format(age), "geometry.xml"))
+    geometry.export_to_xml(os.path.join(fspath, "full-{:.2f}".format(age), "geometry.xml"))
 
 plt.figure(figsize=(5, 5))
 root.plot(width=(47, 47))
@@ -306,8 +336,8 @@ for geo in geometries:
     tallies.export_to_xml(os.path.join(fspath, geo, "tallies.xml"))
     tallies.export_to_xml(os.path.join(evpath, geo, "tallies.xml"))
 for age in ages:
-    tallies.export_to_xml(os.path.join(fspath, "full-{:02d}".format(age)))
-    tallies.export_to_xml(os.path.join(evpath, "full-{:02d}".format(age)))
+    tallies.export_to_xml(os.path.join(fspath, "full-{:.2f}".format(age)))
+    tallies.export_to_xml(os.path.join(evpath, "full-{:.2f}".format(age)))
                  
 ###############################################################################
 # Source & Settings
@@ -329,7 +359,7 @@ settings.source = evsrc
 for geo in geometries:
     settings.export_to_xml(os.path.join(evpath, geo, "settings.xml"))
 for age in ages:
-    settings.export_to_xml(os.path.join(evpath, "full-{:02d}".format(age)))
+    settings.export_to_xml(os.path.join(evpath, "full-{:.2f}".format(age)))
 
 settings.run_mode = 'fixed source'
 settings.inactive = 0
@@ -358,12 +388,12 @@ for age in ages:
         fssrc.append(tmpsrc)
         settings.source = fssrc
     
-        settings.export_to_xml(os.path.join(fspath, "full-{:02d}".format(age)))
+        settings.export_to_xml(os.path.join(fspath, "full-{:.2f}".format(age)))
 
 mass = 4000        
 for age in ages:
     sourcesum = 0
     for iso in pudf.index:
         sourcesum += puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo']
-    print("A 4kg WPu weapon ({:d} years old) emits {:f} neutrons/s".format(age, sourcesum * 4000))
+    print("A 4kg WPu weapon ({:.2f} years old) emits {:f} neutrons/s".format(age, sourcesum * 4000))
 
