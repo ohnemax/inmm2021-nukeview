@@ -277,7 +277,7 @@ tallies = openmc.Tallies()
 
 # Flux
 tally = openmc.Tally(name='flux')
-tally.filters = [openmc.CellFilter([pitCell, refCell, tamCell, expCell, aluCell, outCell]),
+tally.filters = [openmc.CellFilter([cenCell, pitCell, refCell, tamCell, expCell, aluCell, outCell]),
                  openmc.EnergyFilter(np.logspace(-3, 8, num=100))]
 tally.scores = ['flux']
 tallies.append(tally)
