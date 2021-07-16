@@ -11,7 +11,7 @@ import helper
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
 
-basepath = "bust-20210714-point"
+basepath = "bust-20210716-point"
 fettersource = False
 particles = 1
 batches = 10
@@ -673,23 +673,44 @@ zwidth = zmax - zmin
 
 xstep = 100
 tallyxmin = math.floor(xmin / xstep) * xstep
-tallyxmax = math.ceil(xmax / xstep) * xstep + 1
+tallyxmax = math.ceil(xmax / xstep) * xstep 
 ystep = 100
 tallyymin = math.floor(ymin / ystep) * ystep
-tallyymax = math.ceil(ymax / ystep) * ystep + 1
+tallyymax = math.ceil(ymax / ystep) * ystep 
 zstep = 100
 tallyzmin = math.floor(zmin / zstep) * zstep
-tallyzmax = math.ceil(zmax / zstep) * zstep + 1
+tallyzmax = math.ceil(zmax / zstep) * zstep 
+xdim = int(abs(tallyxmax - tallyxmin) / xstep)
+ydim = int(abs(tallyymax - tallyymin) / ystep)
+zdim = int(abs(tallyzmax - tallyzmin) / zstep)
 
 mainmesh = openmc.RectilinearMesh(name = "Main Mesh")
-mainmesh.x_grid = range(tallyxmin, tallyxmax, xstep)
-mainmesh.y_grid = range(tallyymin, tallyymax, ystep)
-mainmesh.z_grid = range(tallyzmin, tallyzmax, zstep)
+mainmesh.x_grid = range(tallyxmin, tallyxmax + 1, xstep)
+mainmesh.y_grid = range(tallyymin, tallyymax + 1, ystep)
+mainmesh.z_grid = range(tallyzmin, tallyzmax + 1, zstep)
+
+regularmesh = openmc.RegularMesh(name = "Regular Mesh")
+regularmesh.dimension = (xdim, ydim, zdim)
+regularmesh.lower_left = (tallyxmin, tallyymin, tallyzmin)
+#regularmesh.upper_right = (tallyxmax, tallyymax, tallyzmax)
+regularmesh.width = (xstep, ystep, zstep)
 
 meshfilter = openmc.MeshFilter(mainmesh)
 tally = openmc.Tally(name = "flux")
 tally.filters = [meshfilter]
 tally.scores = ["flux"]
+tallies.append(tally)
+
+meshfilter = openmc.MeshFilter(regularmesh)
+tally = openmc.Tally(name = "flux, regular mesh")
+tally.filters = [meshfilter]
+tally.scores = ["flux"]
+tallies.append(tally)
+
+meshsurfacefilter = openmc.MeshSurfaceFilter(regularmesh)
+tally = openmc.Tally(name = "current, regular mesh")
+tally.filters = [meshsurfacefilter]
+tally.scores = ["current"]
 tallies.append(tally)
 
 tallies.export_to_xml(os.path.join(basepath, "tallies.xml"))
