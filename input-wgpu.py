@@ -217,6 +217,7 @@ outOR = aluOR + outThickness
 outSurface = openmc.Sphere(r = outOR, boundary_type='vacuum')
 outCell = openmc.Cell()
 outCell.region = +aluSurface & -outSurface
+outCell.name = "Outside (vacuum)"
 
 # Create multiple geometries
 pitCell.fill = wpuMat[0] 
