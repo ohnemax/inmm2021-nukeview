@@ -655,6 +655,7 @@ settings.run_mode = 'fixed source'
 settings.inactive = 0
 settings.batches = batches
 settings.particles = particles
+settings.statepoint = {'batches': range(1, batches + 1)}
 if survival:
     settings.survival_biasing = True
 settings.source = source
