@@ -11,7 +11,7 @@ import helper
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
 
-basepath = "sost-20210716-point"
+basepath = "sost-20210719-point"
 fettersource = False
 particles = 1
 batches = 10
@@ -875,22 +875,11 @@ xdim = int(abs(tallyxmax - tallyxmin) / xstep)
 ydim = int(abs(tallyymax - tallyymin) / ystep)
 zdim = int(abs(tallyzmax - tallyzmin) / zstep)
 
-mainmesh = openmc.RectilinearMesh(name = "Main Mesh")
-mainmesh.x_grid = range(tallyxmin, tallyxmax + 1, xstep)
-mainmesh.y_grid = range(tallyymin, tallyymax + 1, ystep)
-mainmesh.z_grid = range(tallyzmin, tallyzmax + 1, zstep)
-
 regularmesh = openmc.RegularMesh(name = "Regular Mesh")
 regularmesh.dimension = (xdim, ydim, zdim)
 regularmesh.lower_left = (tallyxmin, tallyymin, tallyzmin)
 #regularmesh.upper_right = (tallyxmax, tallyymax, tallyzmax)
 regularmesh.width = (xstep, ystep, zstep)
-
-meshfilter = openmc.MeshFilter(mainmesh)
-tally = openmc.Tally(name = "flux")
-tally.filters = [meshfilter]
-tally.scores = ["flux"]
-tallies.append(tally)
 
 meshfilter = openmc.MeshFilter(regularmesh)
 tally = openmc.Tally(name = "flux, regular mesh")
