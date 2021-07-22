@@ -153,10 +153,10 @@ if plot:
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 if os.path.islink(os.path.join(basepath, "libsource.so")):
     os.unlink(os.path.join(basepath, "libsource.so"))
-os.symlink(os.path.join(scriptdir, "../openmc-cry-source/build/libsource.so"), os.path.join(basepath, "libsource.so"))
+os.symlink(os.path.join(scriptdir, "../cry-with-openmc/build/libsource.so"), os.path.join(basepath, "libsource.so"))
 if os.path.islink(os.path.join(basepath, "data")):
     os.unlink(os.path.join(basepath, "data"))
-os.symlink(os.path.join(scriptdir, "../openmc-cry-source/build/CRY-1.7-prefix/src/CRY-1.7/data"), os.path.join(basepath, "data"))
+os.symlink(os.path.join(scriptdir, "../cry-with-openmc/build/CRY-1.7-prefix/src/CRY-1.7/data"), os.path.join(basepath, "data"))
 source = openmc.Source(library = "./libsource.so")
 if discard:
     discardstring = "discard"
