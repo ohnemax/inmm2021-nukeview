@@ -162,7 +162,8 @@ if discard:
     discardstring = "discard"
 else:
     discardstring = "limit"
-source.parameters = "20000000 {:s} {:f} {:f} {:f} returnNeutrons 1 returnProtons 0 returnGammas 0 returnMuons 0 returnElectrons 0 returnPions 0 date 1-1-2008 latitude 45 altitude 0 subboxLength {:f}".format(discardstring, 0, 0, hw - 1, 2 * hw / 100)
+latitude = 50.173833 # buechel airbase
+source.parameters = "20000000 {:s} {:f} {:f} {:f} returnNeutrons 1 returnProtons 0 returnGammas 0 returnMuons 0 returnElectrons 0 returnPions 0 date 1-1-2008 latitude {:f} altitude 0 subboxLength {:f}".format(discardstring, 0, 0, hw - 1, latitude, 2 * hw / 100)
     
 settings = openmc.Settings()
 settings.run_mode = 'fixed source'
