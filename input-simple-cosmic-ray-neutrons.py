@@ -33,7 +33,7 @@ parser.add_argument("-n", "--particles", type = int,
                     help="set number of particles")
 parser.add_argument("-t", "--time", type = float,
                     help="set a measurement time (and with that the particle number)")
-parser.add_argument("-d", "--discard",
+parser.add_argument("-d", "--discard", action="store_true",
                     help="discard source particles above cutoff energy?")
 
 args = parser.parse_args()
