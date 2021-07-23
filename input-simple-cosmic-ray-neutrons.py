@@ -11,13 +11,13 @@ import openmc
 import helper
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
-
 basepath = "simple-cosmic-ray-neutrons"
 particles = 10000
 batches = 10
 plot = False
 survival = False
 discard = False
+maxenergy = 2e7
 time = 0
 
 parser = argparse.ArgumentParser()
@@ -33,8 +33,12 @@ parser.add_argument("-n", "--particles", type = int,
                     help="set number of particles")
 parser.add_argument("-t", "--time", type = float,
                     help="set a measurement time (and with that the particle number)")
+parser.add_argument("-m", "--maxenergy", type = float,
+                    help="source particles cutoff energy?")
 parser.add_argument("-d", "--discard", action="store_true",
                     help="discard source particles above cutoff energy?")
+parser.add_argument("-x", "--xsection",
+                    help="specify cross section path")
 
 args = parser.parse_args()
 if args.plot:
@@ -49,8 +53,12 @@ if not args.particles is None:
     particles = args.particles
 if not args.time is None:
     time = args.time
+if not args.maxenergy is None:
+    maxenergy = args.maxenergy
 if args.discard:
     discard = True
+if not args.xsection is None:
+    cspath = args.xsection
 
 if not os.path.exists(basepath):
     os.mkdir(basepath)
@@ -85,6 +93,16 @@ soilMat.add_element('Si', 0.141613, 'ao')
 materiallist = [airMat, soilMat]
 
 materials = openmc.Materials(materiallist)
+
+# Check for cross section availability
+lib = openmc.data.DataLibrary.from_xml(cspath)
+for mat in materials:
+    for nuclide in mat.nuclides:
+        if lib.get_by_material(nuclide.name) is None:
+            print("WARNING: Could not find {:s} in cross section library".format(nuclide.name))
+            print("  The material contains {:e} {:s} of that nuclide.".format(nuclide.percent, nuclide.percent_type))
+            print("  Will remove the nuclide from the material")
+            mat.remove_nuclide(nuclide.name)
 materials.cross_sections = cspath
 materials.export_to_xml(os.path.join(basepath, "materials.xml"))
 
@@ -163,7 +181,7 @@ if discard:
 else:
     discardstring = "limit"
 latitude = 50.173833 # buechel airbase
-source.parameters = "20000000 {:s} {:f} {:f} {:f} returnNeutrons 1 returnProtons 0 returnGammas 0 returnMuons 0 returnElectrons 0 returnPions 0 date 1-1-2008 latitude {:f} altitude 0 subboxLength {:f}".format(discardstring, 0, 0, hw - 1, latitude, 2 * hw / 100)
+source.parameters = "{:f} {:s} {:f} {:f} {:f} returnNeutrons 1 returnProtons 0 returnGammas 0 returnMuons 0 returnElectrons 0 returnPions 0 date 1-1-2008 latitude {:f} altitude 0 subboxLength {:f}".format(maxenergy, discardstring, 0, 0, hw - 1, latitude, 2 * hw / 100)
     
 settings = openmc.Settings()
 settings.run_mode = 'fixed source'
