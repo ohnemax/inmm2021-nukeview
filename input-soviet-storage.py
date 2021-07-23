@@ -152,6 +152,7 @@ if fettersource:
     materiallist = materiallist + [wpuMat[weaponage], berMat, tunMat, hmxMat, aluMat]
 
 materials = openmc.Materials(materiallist)
+helper.checkcrosssections(cspath, materials)
 materials.cross_sections = cspath
 materials.export_to_xml(os.path.join(basepath, "materials.xml"))
 

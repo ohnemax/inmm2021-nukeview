@@ -21,6 +21,15 @@ def planeparameter3points(p1, p2, p3):
 
     return (a, b, c, d)
 
+def checkcrosssections(cspath, materials):
+    lib = openmc.data.DataLibrary.from_xml(cspath)
+    for mat in materials:
+        for nuclide in mat.nuclides:
+            if lib.get_by_material(nuclide.name) is None:
+                print("WARNING: Could not find {:s} in cross section library".format(nuclide.name))
+                print("  The material contains {:e} {:s} of that nuclide.".format(nuclide.percent, nuclide.percent_type))
+                print("  Will remove the nuclide from the material")
+                mat.remove_nuclide(nuclide.name)
 
 class puvector:
     def __init__(self):
