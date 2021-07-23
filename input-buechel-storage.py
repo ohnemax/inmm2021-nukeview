@@ -10,33 +10,54 @@ import argparse
 import helper
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
-
-basepath = "bust-20210719-point"
+basepath = "bust-20210723-point"
 fettersource = False
+cosmicray = False
 particles = 1
 batches = 10
 plot = False
 weaponage = 0 # years
 survival = False
+discard = False
+maxenergy = 2e7
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--fetter", action="store_true",
                     help="add fetter model as source")
+parser.add_argument("-r", "--cosmicray", action="store_true",
+                    help="add cosmic ray source")
 parser.add_argument("-p", "--plot", action="store_true",
                     help="plot some cuts through the geometry")
 parser.add_argument("-s", "--survival", action="store_true",
                     help="turn on survival biasing")
 parser.add_argument("-b", "--basepath", 
                     help="set basepath for calculation")
+parser.add_argument("-m", "--maxenergy", type = float,
+                    help="source particles cutoff energy?")
+parser.add_argument("-d", "--discard", action="store_true",
+                    help="discard source particles above cutoff energy?")
+parser.add_argument("-x", "--xsection",
+                    help="specify cross section path")
+
 args = parser.parse_args()
 if args.fetter:
     fettersource = True
+if args.cosmicray:
+    cosmicray = True
+if fettersource and cosmicray:
+    print("Simulating only cosmic ray neutrons as source particle, but will keep geometry / material / position of fetter source")
 if args.plot:
     plot = True
 if args.survival:
     survival = True
 if not args.basepath is None:
     basepath = args.basepath
+if not args.maxenergy is None:
+    maxenergy = args.maxenergy
+if args.discard:
+    discard = True
+if not args.xsection is None:
+    cspath = args.xsection
 
 if not os.path.exists(basepath):
     os.mkdir(basepath)
@@ -48,6 +69,9 @@ with open(os.path.join(basepath, "calculation.json"), 'w') as f:
                'cspath': cspath,
                'batches': batches,
                'fettersource': fettersource,
+               'cosmicray': cosmicray,
+               'discard': discard,
+               'maxenergy': maxenergy,
                'weaponage': weaponage},
               f)
     f.close()
@@ -196,10 +220,38 @@ pasd4 = pasd2 + past2 + 500 # from Kristensen 2005 figure (15 feet)
 
 surfaces = {}
 
-# x surfaces for pas
+# need to create "square world for cosmic ray source
 xmin = -pasw2 - outermarginx
 xmax =  pasw2 + outermarginx
 
+ymin = -outermarginy
+ymax = pasd1 + outermarginy
+
+    
+xwidth = xmax - xmin
+ywidth = ymax - ymin
+
+if xwidth > ywidth:
+    print("Adjusting margins to make a square")
+    print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
+    additionalmargin = (xwidth - ywidth) / 2
+    ymin = ymin - additionalmargin
+    ymax = ymax + additionalmargin
+    ywidth = ymax - ymin
+    print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
+elif ywidth > xwidth:
+    print("Adjusting margins to make a square")
+    print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
+    additionalmargin = (ywidth - xwidth) / 2
+    xmin = xmin - additionalmargin
+    xmax = xmax + additionalmargin
+    xwidth = xmax - xmin
+    print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
+cosmicraywidth = xwidth
+cosmicrayxoffset = xmin + (xmax - xmin) / 2
+cosmicrayyoffset = ymin + (ymax - ymin) / 2
+
+# x surfaces for pas
 surfacex = { 1: xmin, # never set surface id to 0 - then c function can't find cell
              10: -pasw2,
              20: -pasw1,
@@ -245,8 +297,6 @@ surfaces[2050].boundary_type = 'vacuum'
     
 # y surfaces pas
 
-ymin = -outermarginy
-ymax = pasd1 + outermarginy
 
 surfaces[1000] = openmc.YPlane(ymin, surface_id = 1000)
 
@@ -634,7 +684,7 @@ if plot:
 # Source & Settings
 ###############################################################################
 
-if fettersource:
+if fettersource and not cosmicray:
     bounds = [sourcex - pitOR, sourcey - pitOR, sourcez - pitOR,
               sourcex + pitOR, sourcey + pitOR, sourcez + pitOR]
     uniform_dist = openmc.stats.Box(bounds[:3], bounds[3:], only_fissionable=True)
@@ -646,6 +696,21 @@ if fettersource:
         tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
         tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo'] / normalizationconstant
         source.append(tmpsrc)
+elif cosmicray:
+    scriptdir = os.path.dirname(os.path.realpath(__file__))
+    if os.path.islink(os.path.join(basepath, "libsource.so")):
+        os.unlink(os.path.join(basepath, "libsource.so"))
+    os.symlink(os.path.join(scriptdir, "../cry-with-openmc/build/libsource.so"), os.path.join(basepath, "libsource.so"))
+    if os.path.islink(os.path.join(basepath, "data")):
+        os.unlink(os.path.join(basepath, "data"))
+    os.symlink(os.path.join(scriptdir, "../cry-with-openmc/build/CRY-1.7-prefix/src/CRY-1.7/data"), os.path.join(basepath, "data"))
+    source = openmc.Source(library = "./libsource.so")
+    if discard:
+        discardstring = "discard"
+    else:
+        discardstring = "limit"
+    latitude = 50.173833 # buechel airbase
+    source.parameters = "{:f} {:s} {:f} {:f} {:f} returnNeutrons 1 returnProtons 0 returnGammas 0 returnMuons 0 returnElectrons 0 returnPions 0 date 1-1-2008 latitude {:f} altitude 0 subboxLength {:f}".format(maxenergy, discardstring, cosmicrayxoffset, cosmicrayyoffset, zmax - 0.1, latitude, cosmicraywidth / 100)
 else:
     source = openmc.Source(space = openmc.stats.Point((sourcex, sourcey, sourcez)),
                            energy = openmc.stats.Discrete([2e6], [1]),

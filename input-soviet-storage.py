@@ -1,4 +1,3 @@
-import openmc
 import json
 import os
 import matplotlib.pyplot as plt
@@ -7,36 +6,58 @@ import numpy as np
 import sys
 import argparse
 
+import openmc
 import helper
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
-
-basepath = "sost-20210719-point"
+basepath = "sost-20210723-point"
 fettersource = False
+cosmicray = False
 particles = 1
 batches = 10
 plot = False
-weaponage = 0
+weaponage = 0 # years
 survival = False
+discard = False
+maxenergy = 2e7
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--fetter", action="store_true",
                     help="add fetter model as source")
+parser.add_argument("-r", "--cosmicray", action="store_true",
+                    help="add cosmic ray source")
 parser.add_argument("-p", "--plot", action="store_true",
                     help="plot some cuts through the geometry")
 parser.add_argument("-s", "--survival", action="store_true",
                     help="turn on survival biasing")
 parser.add_argument("-b", "--basepath", 
                     help="set basepath for calculation")
+parser.add_argument("-m", "--maxenergy", type = float,
+                    help="source particles cutoff energy?")
+parser.add_argument("-d", "--discard", action="store_true",
+                    help="discard source particles above cutoff energy?")
+parser.add_argument("-x", "--xsection",
+                    help="specify cross section path")
+
 args = parser.parse_args()
 if args.fetter:
     fettersource = True
+if args.cosmicray:
+    cosmicray = True
+if fettersource and cosmicray:
+    print("Simulating only cosmic ray neutrons as source particle, but will keep geometry / material / position of fetter source")
 if args.plot:
     plot = True
 if args.survival:
     survival = True
 if not args.basepath is None:
     basepath = args.basepath
+if not args.maxenergy is None:
+    maxenergy = args.maxenergy
+if args.discard:
+    discard = True
+if not args.xsection is None:
+    cspath = args.xsection
 
 if not os.path.exists(basepath):
     os.mkdir(basepath)
@@ -48,6 +69,9 @@ with open(os.path.join(basepath, "calculation.json"), 'w') as f:
                'cspath': cspath,
                'batches': batches,
                'fettersource': fettersource,
+               'cosmicray': cosmicray,
+               'discard': discard,
+               'maxenergy': maxenergy,
                'weaponage': weaponage},
               f)
     f.close()
@@ -188,7 +212,7 @@ distp = 500 # Directly in cm
 surfaces = {}
 
 # x surfaces for lower level (main)
-surfaceincrements = {1: 0,
+xsurfaceincrements = {1: 0,
                      5: distp,
                      7: disth,
                      10: thickA,
@@ -215,10 +239,50 @@ surfaceincrements = {1: 0,
                      215: disth,
                      220: distp
 }
-xwidth = sum(surfaceincrements.values()) 
+xwidth = sum(xsurfaceincrements.values()) 
+ 
+ysurfaceincrements = {990: 0,
+                      995: distp,
+                      1000: disth,
+                      1010: thickA,
+                      1020: diste,
+                      1030: thickA,
+                      1040: distn,
+                      1050: disto,
+                      1060: thickA,
+                      1070: disto,
+                      1080: distn,
+                      1090: thickA,
+                      1100: distm,
+                      1110: thickA,
+                      1115: disth,
+                      1120: distp
+}
+ywidth = sum(ysurfaceincrements.values()) 
+
+#adjust to make square
+if xwidth < ywidth:
+    print("Adjust x-axis to make geometry a square")
+    print(xwidth, ywidth)
+    additionalmargin = (ywidth - xwidth) / 2
+    xsurfaceincrements[5] += additionalmargin
+    xsurfaceincrements[220] += additionalmargin
+    xwidth = sum(xsurfaceincrements.values())
+    print(xwidth, ywidth)
+elif ywidth < xwidth:
+    print("Adjust y-axis to make geometry a square")
+    print(xwidth, ywidth)
+    additionalmargin = (xwidth - ywidth) / 2
+    ysurfaceincrements[995] += additionalmargin
+    ysurfaceincrements[1120] += additionalmargin
+    print(xwidth, ywidth)
+    ywidth = sum(ysurfaceincrements.values())
+cosmicraywidth = xwidth
+cosmicrayxoffset = xwidth / 2
+cosmicrayyoffset = ywidth / 2
 
 val = 0
-for sid, inc in surfaceincrements.items():
+for sid, inc in xsurfaceincrements.items():
     val += inc
     surfaces[sid] = openmc.XPlane(val, surface_id = sid)
 
@@ -248,27 +312,8 @@ surfaces[195] = openmc.XPlane(surfaces[190].x0 + disth, surface_id = 195)
 # x surfaces for lower level (auxiliary)
 
 # y surfaces for lower level (main)
-surfaceincrements = {990: 0,
-                     995: distp,
-                     1000: disth,
-                     1010: thickA,
-                     1020: diste,
-                     1030: thickA,
-                     1040: distn,
-                     1050: disto,
-                     1060: thickA,
-                     1070: disto,
-                     1080: distn,
-                     1090: thickA,
-                     1100: distm,
-                     1110: thickA,
-                     1115: disth,
-                     1120: distp
-}
-ywidth = sum(surfaceincrements.values()) 
-
 val = 0
-for sid, inc in surfaceincrements.items():
+for sid, inc in ysurfaceincrements.items():
     val += inc
     surfaces[sid] = openmc.YPlane(val, surface_id = sid)
 
@@ -554,19 +599,31 @@ soilcells[-1].region = +surfaces[2040] & +surfaces[2210] & +surfaces[20] & -surf
 soilcells[-1].name = "Auxiliary Area soil cover"
 
 soilcells.append(openmc.Cell())
-soilcells[-1].region = +surfaces[2000] & +surfaces[2220] & +surfaces[5] & -surfaces[210] & -surfaces[1000]
+soilcells[-1].region = \
+    +surfaces[2000] & +surfaces[2220] & \
+    +surfaces[5] & -surfaces[210] & \
+    +surfaces[990] & -surfaces[1000]
 soilcells[-1].name = "Weapon Area soil right dam"
 
 soilcells.append(openmc.Cell())
-soilcells[-1].region = +surfaces[2000] & -surfaces[2230] & +surfaces[5] & -surfaces[210] & +surfaces[1110]
+soilcells[-1].region = \
+    +surfaces[2000] & -surfaces[2230] & \
+    +surfaces[5] & -surfaces[210] & \
+    +surfaces[1110] & -surfaces[1120] 
 soilcells[-1].name = "Auxiliary Area soil left dam"
 
 soilcells.append(openmc.Cell())
-soilcells[-1].region = +surfaces[2000] & +surfaces[2200] & +surfaces[5] & -surfaces[20] & +surfaces[1000] & -surfaces[1020]
+soilcells[-1].region = \
+    +surfaces[2000] & +surfaces[2200] & \
+    +surfaces[5] & -surfaces[20] & \
+    +surfaces[1000] & -surfaces[1020]
 soilcells[-1].name = "Weapon Area low dam"
 
 soilcells.append(openmc.Cell())
-soilcells[-1].region = +surfaces[2000] & +surfaces[2210] & +surfaces[5] & -surfaces[20] & +surfaces[1090] & -surfaces[1110]
+soilcells[-1].region = \
+    +surfaces[2000] & +surfaces[2210] & \
+    +surfaces[5] & -surfaces[20] & \
+    +surfaces[1090] & -surfaces[1110]
 soilcells[-1].name = "Auxiliary Area low dam"
 
 soilcells.append(openmc.Cell())
@@ -822,7 +879,7 @@ if plot:
 # Source & Settings
 ###############################################################################
 
-if fettersource:
+if fettersource and not cosmicray:
     bounds = [sourcex - pitOR, sourcey - pitOR, sourcez - pitOR,
               sourcex + pitOR, sourcey + pitOR, sourcez + pitOR]
     uniform_dist = openmc.stats.Box(bounds[:3], bounds[3:], only_fissionable=True)
@@ -834,6 +891,21 @@ if fettersource:
         tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
         tmpsrc.strength = puagedf.loc[(iso, age), 'sfneutrons'] * puagedf.loc[(iso, age), 'wo'] / normalizationconstant
         source.append(tmpsrc)
+elif cosmicray:
+    scriptdir = os.path.dirname(os.path.realpath(__file__))
+    if os.path.islink(os.path.join(basepath, "libsource.so")):
+        os.unlink(os.path.join(basepath, "libsource.so"))
+    os.symlink(os.path.join(scriptdir, "../cry-with-openmc/build/libsource.so"), os.path.join(basepath, "libsource.so"))
+    if os.path.islink(os.path.join(basepath, "data")):
+        os.unlink(os.path.join(basepath, "data"))
+    os.symlink(os.path.join(scriptdir, "../cry-with-openmc/build/CRY-1.7-prefix/src/CRY-1.7/data"), os.path.join(basepath, "data"))
+    source = openmc.Source(library = "./libsource.so")
+    if discard:
+        discardstring = "discard"
+    else:
+        discardstring = "limit"
+    latitude = 53.175 # lychen II, a former GDR storage site
+    source.parameters = "{:f} {:s} {:f} {:f} {:f} returnNeutrons 1 returnProtons 0 returnGammas 0 returnMuons 0 returnElectrons 0 returnPions 0 date 1-1-2008 latitude {:f} altitude 0 subboxLength {:f}".format(maxenergy, discardstring, cosmicrayxoffset, cosmicrayyoffset, zwidth - 0.1, latitude, cosmicraywidth / 100)
 else:
     source = openmc.Source(space = openmc.stats.Point((sourcex, sourcey, sourcez)),
                            energy = openmc.stats.Discrete([2e6], [1]),
