@@ -277,7 +277,7 @@ elif ywidth < xwidth:
     ysurfaceincrements[1120] += additionalmargin
     print(xwidth, ywidth)
     ywidth = sum(ysurfaceincrements.values())
-cosmicraywidth = xwidth
+cosmicraywidth = xwidth - 0.0001 # reduce by 1 µm to avoid particles produced outside
 cosmicrayxoffset = xwidth / 2
 cosmicrayyoffset = ywidth / 2
 
@@ -768,25 +768,25 @@ geometry.export_to_xml(os.path.join(basepath, "geometry.xml"))
 if plot:
     print("Plotting geometry - can take a few seconds")
 
-    plt.figure(figsize=(8, 8))
-    root.plot(origin = (sourcex, sourcey, sourcez),
-              basis=('xz'),
-              width=(300, 300),
-              pixels=(600, 600),
-              seed = 1)
-    plt.title("Source View (xz)")
-    plt.savefig(os.path.join(basepath, "source-view-xz.png"))
-    plt.close()
+    # plt.figure(figsize=(8, 8))
+    # root.plot(origin = (sourcex, sourcey, sourcez),
+    #           basis=('xz'),
+    #           width=(300, 300),
+    #           pixels=(600, 600),
+    #           seed = 1)
+    # plt.title("Source View (xz)")
+    # plt.savefig(os.path.join(basepath, "source-view-xz.png"))
+    # plt.close()
 
-    plt.figure(figsize=(8, 8))
-    root.plot(origin = (sourcex, sourcey, sourcez),
-              basis=('xy'),
-              width=(300, 300),
-              pixels=(600, 600),
-              seed = 1)
-    plt.title("Source View (xy)")
-    plt.savefig(os.path.join(basepath, "source-view-xy.png"))
-    plt.close()
+    # plt.figure(figsize=(8, 8))
+    # root.plot(origin = (sourcex, sourcey, sourcez),
+    #           basis=('xy'),
+    #           width=(300, 300),
+    #           pixels=(600, 600),
+    #           seed = 1)
+    # plt.title("Source View (xy)")
+    # plt.savefig(os.path.join(basepath, "source-view-xy.png"))
+    # plt.close()
 
     xfactor = 1.2
     yfactor = 1.2

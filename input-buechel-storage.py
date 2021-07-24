@@ -247,7 +247,7 @@ elif ywidth > xwidth:
     xmax = xmax + additionalmargin
     xwidth = xmax - xmin
     print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
-cosmicraywidth = xwidth
+cosmicraywidth = xwidth - 0.0001 # reduce by 1 µm to avoid particles produced outside
 cosmicrayxoffset = xmin + (xmax - xmin) / 2
 cosmicrayyoffset = ymin + (ymax - ymin) / 2
 
