@@ -31,6 +31,26 @@ def checkcrosssections(cspath, materials):
                 print("  Will remove the nuclide from the material")
                 mat.remove_nuclide(nuclide.name)
 
+def createpuvecfrommat(material):
+    puisotopes = ['Pu238', 'Pu239', 'Pu240', 'Pu241', 'Pu242', 'Am241']
+    # totpumass = sum([material.get_mass_density(i) for i in puisotopes])
+    totpumass = material.get_mass_density()
+    puvec = puvector()
+    for i in puisotopes:
+        puvec.setwo(i, material.get_mass_density(i) / totpumass)
+        print(i, material.get_mass_density(i) / totpumass)
+    return puvec
+
+def createwgpuvec():
+    puvec = puvector()
+    puvec.setwo('Pu238', 0.00005)
+    puvec.setwo('Pu239', 0.993)
+    puvec.setwo('Pu240', 0.060)
+    puvec.setwo('Pu241', 0.0044)
+    puvec.setwo('Pu242', 0.00015)
+    puvec.setwo('Am241', 0)
+    return puvec
+
 class puvector:
     def __init__(self):
         pudict = {'name': ['Pu238', 'Pu239', 'Pu240', 'Pu241', 'Pu242', 'Am241'],

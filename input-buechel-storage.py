@@ -20,6 +20,7 @@ weaponage = 0 # years
 survival = False
 discard = False
 maxenergy = 2e7
+weightcutoff = 0.25
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--fetter", action="store_true",
@@ -30,6 +31,8 @@ parser.add_argument("-p", "--plot", action="store_true",
                     help="plot some cuts through the geometry")
 parser.add_argument("-s", "--survival", action="store_true",
                     help="turn on survival biasing")
+parser.add_argument("-w", "--weightcutoff", type = float,
+                    help="weight cutoff value (only used if survial biasing is on)")
 parser.add_argument("-b", "--basepath", 
                     help="set basepath for calculation")
 parser.add_argument("-m", "--maxenergy", type = float,
@@ -50,6 +53,8 @@ if args.plot:
     plot = True
 if args.survival:
     survival = True
+if not args.weightcutoff is None:
+    weightcutoff = args.weightcutoff
 if not args.basepath is None:
     basepath = args.basepath
 if not args.maxenergy is None:
@@ -231,22 +236,21 @@ ymax = pasd1 + outermarginy
 xwidth = xmax - xmin
 ywidth = ymax - ymin
 
-if xwidth > ywidth:
-    print("Adjusting margins to make a square")
+newwidth = 10000
+if xwidth < newwidth and ywidth < newwidth:
+    print("Adjusting margins to make a square of {:.0f}m side length".format(newwidth))
     print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
-    additionalmargin = (xwidth - ywidth) / 2
-    ymin = ymin - additionalmargin
-    ymax = ymax + additionalmargin
+    additionalxmargin = (newwidth - xwidth) / 2
+    xmin = xmin - additionalxmargin
+    xmax = xmax + additionalxmargin
+    xwidth = xmax - xmin
+    additionalymargin = (newwidth - ywidth) / 2
+    ymin = ymin - additionalymargin
+    ymax = ymax + additionalymargin
     ywidth = ymax - ymin
     print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
-elif ywidth > xwidth:
-    print("Adjusting margins to make a square")
-    print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
-    additionalmargin = (ywidth - xwidth) / 2
-    xmin = xmin - additionalmargin
-    xmax = xmax + additionalmargin
-    xwidth = xmax - xmin
-    print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
+else:
+    print("One side is already bigger than 100m, can not adjust to make a square")
 cosmicraywidth = xwidth - 0.0001 # reduce by 1 µm to avoid particles produced outside
 cosmicrayxoffset = xmin + (xmax - xmin) / 2
 cosmicrayyoffset = ymin + (ymax - ymin) / 2
@@ -724,6 +728,9 @@ settings.particles = particles
 settings.statepoint = {'batches': range(1, batches + 1)}
 if survival:
     settings.survival_biasing = True
+    cutoff = {}
+    cutoff['weight'] = weightcutoff
+    settings.cutoff = cutoff
 settings.source = source
 
 settings.export_to_xml(os.path.join(basepath, "settings.xml"))
@@ -750,6 +757,7 @@ tallyzmax = math.ceil(zmax / zstep) * zstep
 xdim = int(abs(tallyxmax - tallyxmin) / xstep)
 ydim = int(abs(tallyymax - tallyymin) / ystep)
 zdim = int(abs(tallyzmax - tallyzmin) / zstep)
+print(xdim, ydim, zdim)
 
 regularmesh = openmc.RegularMesh(name = "Regular Mesh")
 regularmesh.dimension = (xdim, ydim, zdim)
