@@ -203,10 +203,10 @@ disth = 25 * verticalpixel #dirt height - an assumption
 disti = 0
 distj = 0
 distk = 0
-distl = 100 * horizontalpixel #TODO measure
-distm = 150 * horizontalpixel #TODO measure
-distn = 25 * horizontalpixel #TODO measure
-disto = 25 * horizontalpixel #TODO measure
+distl = 58.5 * horizontalpixel 
+distm = 166.5 * horizontalpixel 
+distn = 15.7 * horizontalpixel #from 130.7px = 3 * thickA + 2 * distn + 2 * disto
+disto = 15.7 * horizontalpixel #assume distn = disto
 distp = 500 # Directly in cm
 
 surfaces = {}
@@ -261,22 +261,23 @@ ysurfaceincrements = {990: 0,
 ywidth = sum(ysurfaceincrements.values()) 
 
 #adjust to make square
-if xwidth < ywidth:
-    print("Adjust x-axis to make geometry a square")
+
+newwidth = 10000
+
+if xwidth < newwidth and ywidth < newwidth:
+    print("Adjusting margins to make a square of {:.0f}m side length".format(newwidth))
     print(xwidth, ywidth)
-    additionalmargin = (ywidth - xwidth) / 2
-    xsurfaceincrements[5] += additionalmargin
-    xsurfaceincrements[220] += additionalmargin
+    additionalxmargin = (newwidth - xwidth) / 2
+    xsurfaceincrements[5] += additionalxmargin
+    xsurfaceincrements[220] += additionalxmargin
     xwidth = sum(xsurfaceincrements.values())
-    print(xwidth, ywidth)
-elif ywidth < xwidth:
-    print("Adjust y-axis to make geometry a square")
-    print(xwidth, ywidth)
-    additionalmargin = (xwidth - ywidth) / 2
-    ysurfaceincrements[995] += additionalmargin
-    ysurfaceincrements[1120] += additionalmargin
-    print(xwidth, ywidth)
+    additionalymargin = (newwidth - ywidth) / 2
+    ysurfaceincrements[995] += additionalymargin
+    ysurfaceincrements[1120] += additionalymargin
     ywidth = sum(ysurfaceincrements.values())
+    print(xwidth, ywidth)
+else:
+    print("One side is already bigger than 100m, can not adjust to make a square")
 cosmicraywidth = xwidth - 0.0001 # reduce by 1 µm to avoid particles produced outside
 cosmicrayxoffset = xwidth / 2
 cosmicrayyoffset = ywidth / 2
@@ -291,7 +292,7 @@ surfaces[1].boundary_type = 'vacuum'
 surfaces[220].boundary_type = 'vacuum'
 
 # Special surfaces for doors
-surfaces[2] = openmc.XPlane(surfaces[5].x0 + thickD, surface_id = 2)
+surfaces[2] = openmc.XPlane(surfaces[7].x0 + thickD, surface_id = 2)
 surfaces[28] = openmc.XPlane(surfaces[30].x0 - thickD, surface_id = 28)
 surfaces[182] = openmc.XPlane(surfaces[180].x0 + thickD, surface_id = 182)
 surfaces[208] = openmc.XPlane(surfaces[210].x0 - thickD, surface_id = 208)
@@ -376,7 +377,7 @@ surfaces[2230] = openmc.Plane(a, b, c, d, surface_id = 2230)
 # cells: base concrete
 baseconcretecells = []
 baseconcretecells.append(openmc.Cell())
-baseconcretecells[-1].region = +surfaces[2000] & -surfaces[2010] & +surfaces[5] & -surfaces[20] & +surfaces[1020] & -surfaces[1090]
+baseconcretecells[-1].region = +surfaces[2000] & -surfaces[2010] & +surfaces[7] & -surfaces[20] & +surfaces[1020] & -surfaces[1090]
 baseconcretecells[-1].name = "Base Concrete Wing I"
 
 baseconcretecells.append(openmc.Cell())
@@ -390,7 +391,7 @@ baseconcretecells[-1].name = "Base Concrete Wing II"
 # cells: lower level concrete walls
 lowerlevelwallcells = []
 lowerlevelwallcells.append(openmc.Cell())
-lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[5] & -surfaces[10] & +surfaces[1020] & -surfaces[1090]
+lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[7] & -surfaces[10] & +surfaces[1020] & -surfaces[1090]
 lowerlevelwallcells[-1].name = "Wing I Wall low"
 
 lowerlevelwallcells.append(openmc.Cell())
@@ -482,12 +483,12 @@ lowerlevelwallcells.append(openmc.Cell())
 lowerlevelwallcells[-1].region = +surfaces[2010] & -surfaces[2020] & +surfaces[200] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
 lowerlevelwallcells[-1].name = "Wing I Wall high"
 
-region_columnauxiliarylowouter = +surfaces[2020] & -surfaces[2060] & +surfaces[5] & -surfaces[10] & +surfaces[1070] & -surfaces[1080]
+region_columnauxiliarylowouter = +surfaces[2020] & -surfaces[2060] & +surfaces[7] & -surfaces[10] & +surfaces[1070] & -surfaces[1080]
 region_columnauxiliarylowinner = +surfaces[2020] & -surfaces[2060] & +surfaces[20] & -surfaces[30] & +surfaces[1070] & -surfaces[1080]
 region_columnauxiliaryhighinner = +surfaces[2020] & -surfaces[2060] & +surfaces[180] & -surfaces[190] & +surfaces[1070] & -surfaces[1080]
 region_columnauxiliaryhighouter = +surfaces[2020] & -surfaces[2060] & +surfaces[200] & -surfaces[210] & +surfaces[1070] & -surfaces[1080]
 
-region_columnweaponlowouter = +surfaces[2020] & -surfaces[2060] & +surfaces[5] & -surfaces[10] & +surfaces[1030] & -surfaces[1040]
+region_columnweaponlowouter = +surfaces[2020] & -surfaces[2060] & +surfaces[7] & -surfaces[10] & +surfaces[1030] & -surfaces[1040]
 region_columnweaponlowinner = +surfaces[2020] & -surfaces[2060] & +surfaces[20] & -surfaces[30] & +surfaces[1030] & -surfaces[1040]
 region_columnweaponhighinner = +surfaces[2020] & -surfaces[2060] & +surfaces[180] & -surfaces[190] & +surfaces[1030] & -surfaces[1040]
 region_columnweaponhighouter = +surfaces[2020] & -surfaces[2060] & +surfaces[200] & -surfaces[210] & +surfaces[1030] & -surfaces[1040]
@@ -527,11 +528,11 @@ upperlevelwallcells[-1].region = region_columnweaponhighouter
 upperlevelwallcells[-1].name = "Column Weapon High Outer"
 
 upperlevelwallcells.append(openmc.Cell())
-upperlevelwallcells[-1].region = +surfaces[2020] & -surfaces[2060] & +surfaces[5] & -surfaces[210] & +surfaces[1020] & -surfaces[1030]
+upperlevelwallcells[-1].region = +surfaces[2020] & -surfaces[2060] & +surfaces[7] & -surfaces[210] & +surfaces[1020] & -surfaces[1030]
 upperlevelwallcells[-1].name = "Wall Weapon Side"
 
 upperlevelwallcells.append(openmc.Cell())
-upperlevelwallcells[-1].region = +surfaces[2020] & -surfaces[2060] & +surfaces[5] & -surfaces[210] & +surfaces[1080] & -surfaces[1090]
+upperlevelwallcells[-1].region = +surfaces[2020] & -surfaces[2060] & +surfaces[7] & -surfaces[210] & +surfaces[1080] & -surfaces[1090]
 upperlevelwallcells[-1].name = "Wall Auxiliary Side"
 
 upperlevelroofcells = []
@@ -544,7 +545,7 @@ upperlevelroofcells[-1].region = +surfaces[2020] & -surfaces[2040] & +surfaces[2
 upperlevelroofcells[-1].name = "Auxiliary Roof"
 
 upperlevelroofcells.append(openmc.Cell())
-upperlevelroofcells[-1].region = (+surfaces[2020] & -surfaces[2030] & +surfaces[5] & -surfaces[70] & +surfaces[1030] & -surfaces[1080]) & ~region_columnauxiliarylowouter & ~region_columnauxiliarylowinner & ~region_columnweaponlowouter & ~region_columnweaponlowinner
+upperlevelroofcells[-1].region = (+surfaces[2020] & -surfaces[2030] & +surfaces[7] & -surfaces[70] & +surfaces[1030] & -surfaces[1080]) & ~region_columnauxiliarylowouter & ~region_columnauxiliarylowinner & ~region_columnweaponlowouter & ~region_columnweaponlowinner
 upperlevelroofcells[-1].name = "Floor low"
 
 upperlevelroofcells.append(openmc.Cell())
@@ -552,12 +553,12 @@ upperlevelroofcells[-1].region = (+surfaces[2020] & -surfaces[2030] & +surfaces[
 upperlevelroofcells[-1].name = "Floor high"
 
 upperlevelroofcells.append(openmc.Cell())
-upperlevelroofcells[-1].region = +surfaces[2060] & -surfaces[2070] & +surfaces[5] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
+upperlevelroofcells[-1].region = +surfaces[2060] & -surfaces[2070] & +surfaces[7] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
 upperlevelroofcells[-1].name = "Upper Roof"
 
 doors = []
 doors.append(openmc.Cell())
-doors[-1].region = +surfaces[2030] & -surfaces[2060] & +surfaces[5] & -surfaces[2] & +surfaces[1040] & -surfaces[1070]
+doors[-1].region = +surfaces[2030] & -surfaces[2060] & +surfaces[7] & -surfaces[2] & +surfaces[1040] & -surfaces[1070]
 doors[-1].name = "Main Door low"
 
 doors.append(openmc.Cell())
@@ -601,28 +602,28 @@ soilcells[-1].name = "Auxiliary Area soil cover"
 soilcells.append(openmc.Cell())
 soilcells[-1].region = \
     +surfaces[2000] & +surfaces[2220] & \
-    +surfaces[5] & -surfaces[210] & \
+    +surfaces[7] & -surfaces[210] & \
     +surfaces[990] & -surfaces[1000]
 soilcells[-1].name = "Weapon Area soil right dam"
 
 soilcells.append(openmc.Cell())
 soilcells[-1].region = \
     +surfaces[2000] & -surfaces[2230] & \
-    +surfaces[5] & -surfaces[210] & \
+    +surfaces[7] & -surfaces[210] & \
     +surfaces[1110] & -surfaces[1120] 
 soilcells[-1].name = "Auxiliary Area soil left dam"
 
 soilcells.append(openmc.Cell())
 soilcells[-1].region = \
     +surfaces[2000] & +surfaces[2200] & \
-    +surfaces[5] & -surfaces[20] & \
+    +surfaces[7] & -surfaces[20] & \
     +surfaces[1000] & -surfaces[1020]
 soilcells[-1].name = "Weapon Area low dam"
 
 soilcells.append(openmc.Cell())
 soilcells[-1].region = \
     +surfaces[2000] & +surfaces[2210] & \
-    +surfaces[5] & -surfaces[20] & \
+    +surfaces[7] & -surfaces[20] & \
     +surfaces[1090] & -surfaces[1110]
 soilcells[-1].name = "Auxiliary Area low dam"
 
@@ -635,7 +636,7 @@ soilcells[-1].region = +surfaces[2000] & +surfaces[2210] & +surfaces[190] & -sur
 soilcells[-1].name = "Auxiliary Area high dam"
 
 soilcells.append(openmc.Cell())
-soilcells[-1].region = +surfaces[2070] & -surfaces[2080] & +surfaces[5] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
+soilcells[-1].region = +surfaces[2070] & -surfaces[2080] & +surfaces[7] & -surfaces[210] & +surfaces[1020] & -surfaces[1090]
 soilcells[-1].name = "Center Area cover"
 
 
