@@ -185,8 +185,8 @@ materials.export_to_xml(os.path.join(concrete2100path, "materials.xml"))
 
 materiallist = [airMat, concreteRegularMat, wpuMat[weaponage], berMat, tunMat, hmxMat, aluMat]
 materials = openmc.Materials(materiallist)
-helper.checkcrosssections(cspath, materials)
-materials.cross_sections = cspath
+helper.checkcrosssections(cspathfetter, materials)
+materials.cross_sections = cspathfetter
 materials.export_to_xml(os.path.join(concretefetterpath, "materials.xml"))
 
 materiallist = [airMat, waterMat]
@@ -204,8 +204,8 @@ materials.export_to_xml(os.path.join(waterfetterpath, "materials.xml"))
 
 materiallist = [airMat, soilMat]
 materials = openmc.Materials(materiallist)
-helper.checkcrosssections(cspathfetter, materials)
-materials.cross_sections = cspathfetter
+helper.checkcrosssections(cspath, materials)
+materials.cross_sections = cspath
 materials.export_to_xml(os.path.join(soilpath, "materials.xml"))
 materials.export_to_xml(os.path.join(soil2100path, "materials.xml"))
 
