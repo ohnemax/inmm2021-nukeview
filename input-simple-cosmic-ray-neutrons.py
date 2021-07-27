@@ -224,48 +224,47 @@ hw = 10000
 zmin = -500
 zmax = 1500
 
-groundAirSurface = openmc.ZPlane(0)
 groundBottom = openmc.ZPlane(zmin)
-groundLeft = openmc.XPlane(-hw)
-groundRight = openmc.XPlane(hw)
-groundFront = openmc.YPlane(-hw)
-groundBack = openmc.YPlane(hw)
-
+groundAirSurface = openmc.ZPlane(0)
 airTop = openmc.ZPlane(zmax)
-airLeft = openmc.XPlane(-hw)
-airRight = openmc.XPlane(hw)
-airFront = openmc.YPlane(-hw)
-airBack = openmc.YPlane(hw)
 
-groundBottom.boundary_type = 'vacuum'
-
-groundLeft.boundary_type = 'vacuum'
-groundRight.boundary_type = 'vacuum'
-groundFront.boundary_type = 'vacuum'
-groundBack.boundary_type = 'vacuum'
-
-airLeft.boundary_type = 'vacuum'
-airRight.boundary_type = 'vacuum'
-airFront.boundary_type = 'vacuum'
-airBack.boundary_type = 'vacuum'
-
-airTop.boundary_type = 'vacuum'
+left = openmc.XPlane(-hw)
+right = openmc.XPlane(hw)
+front = openmc.YPlane(-hw)
+back = openmc.YPlane(hw)
 
 concreteCell = openmc.Cell()
-concreteCell.region = +groundBottom & -groundAirSurface & +groundLeft & -groundRight & +groundFront & -groundBack
+concreteCell.region = +groundBottom & -groundAirSurface & +left & -right & +front & -back
 concreteCell.fill = concreteRegularMat
 
 waterCell = openmc.Cell()
-waterCell.region = +groundBottom & -groundAirSurface & +groundLeft & -groundRight & +groundFront & -groundBack
+waterCell.region = +groundBottom & -groundAirSurface & +left & -right & +front & -back
 waterCell.fill = waterMat
 
 soilCell = openmc.Cell()
-soilCell.region = +groundBottom & -groundAirSurface & +groundLeft & -groundRight & +groundFront & -groundBack
+soilCell.region = concreteCell.region = +groundBottom & -groundAirSurface & +left & -right & +front & -back
 soilCell.fill = soilMat
 
 airCell = openmc.Cell()
-airCell.region = +groundAirSurface & -airTop & +airLeft & -airRight & +airFront & -airBack
+airCell.region = +groundAirSurface & -airTop & +left & -right & +front & -back
 airCell.fill = airMat
+
+groundBottom.boundary_type = 'vacuum'
+airTop.boundary_type = 'vacuum'
+
+left.boundary_type = 'periodic'
+left.periodic_surface = right
+right.boundary_type = 'periodic'
+right.periodic_surface = left
+front.boundary_type = 'periodic'
+front.periodic_surface = back
+back.boundary_type = 'periodic'
+back.periodic_surface = front
+
+root = openmc.Universe(cells = [airCell, soilCell])
+geometry = openmc.Geometry(root)
+geometry.export_to_xml(os.path.join(soilpath, "geometry.xml"))
+geometry.export_to_xml(os.path.join(soil2100path, "geometry.xml"))
 
 root = openmc.Universe(cells = [airCell, concreteCell])
 geometry = openmc.Geometry(root)
@@ -277,14 +276,17 @@ geometry = openmc.Geometry(root)
 geometry.export_to_xml(os.path.join(waterpath, "geometry.xml"))
 geometry.export_to_xml(os.path.join(water2100path, "geometry.xml"))
 
-root = openmc.Universe(cells = [airCell, soilCell])
-geometry = openmc.Geometry(root)
-geometry.export_to_xml(os.path.join(soilpath, "geometry.xml"))
-geometry.export_to_xml(os.path.join(soil2100path, "geometry.xml"))
+
+
 
 #*******************************************************************************
 # fetter model
 # always at origin, z=1m
+
+left.boundary_type = 'vacuum'
+right.boundary_type = 'vacuum'
+front.boundary_type = 'vacuum'
+back.boundary_type = 'vacuum'
 
 weaponz = 150
 # Pit
@@ -363,6 +365,7 @@ settings.run_mode = 'fixed source'
 settings.inactive = 0
 settings.batches = batches
 settings.particles = particles
+settings.output = {'tallies': False}
 if survival:
     settings.survival_biasing = True
     cutoff = {}
