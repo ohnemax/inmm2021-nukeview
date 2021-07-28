@@ -19,7 +19,7 @@ import helper
 
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
-basepath = "fetter-20210715"
+basepath = "fetter-20210728"
 particles = 1
 batches = 100
 ages = [0, 5, 10, 15, 20, 25, 30, 35, 40]
@@ -275,12 +275,19 @@ plt.savefig(os.path.join(basepath, "fetter_geometry.png"))
 
 tallies = openmc.Tallies()
 
+allcellfilter = openmc.CellFilter([cenCell, pitCell, refCell, tamCell, expCell, aluCell, outCell])
+allcellfromfilter = openmc.CellFromFilter([cenCell, pitCell, refCell, tamCell, expCell, aluCell, outCell])
+allsurfacefilter = openmc.SurfaceFilter([cenSurface, pitSurface, refSurface, tamSurface, expSurface, aluSurface, outSurface])
+energyfilter = openmc.EnergyFilter(np.logspace(-3, 8, num=100))
+cellbornfilter = openmc.CellbornFilter([cenCell, pitCell, refCell, tamCell, expCell, aluCell, outCell])
+
 # Flux
 tally = openmc.Tally(name='flux')
-tally.filters = [openmc.CellFilter([cenCell, pitCell, refCell, tamCell, expCell, aluCell, outCell]),
-                 openmc.EnergyFilter(np.logspace(-3, 8, num=100))]
+tally.filters = [allcellfilter,
+                 energyfilter]
 tally.scores = ['flux']
 tallies.append(tally)
+
 
 # Leakage with Mesh
 # Instantiate a tally mesh
@@ -314,6 +321,23 @@ fiss_rate.scores = ['nu-fission']
 abs_rate.scores = ['absorption']
 tallies += (fiss_rate, abs_rate)
 
+nuscatter_rate = openmc.Tally(name='nu scatter')
+nuscatter_rate.scores = ['nu-scatter']
+tallies.append(nuscatter_rate)
+
+rates = openmc.Tally(name='various reaction rates')
+rates.scores = ['absorption', 'fission', 'scatter', 'total', 
+                '(n,2nd)', '(n,2n)', '(n,3n)', '(n,na)', '(n,n3a)', '(n,2na)',
+                '(n,3na)', '(n,np)', '(n,n2a)', '(n,2n2a)', '(n,nd)', '(n,nt)',
+                '(n,n3He)', '(n,nd2a)', '(n,nt2a)', '(n,4n)', '(n,2np)',
+                '(n,3np)', '(n,n2p)',
+                '(n,gamma)', '(n,p)', '(n,t)', '(n,3He)', '(n,a)',
+                '(n,2a)', '(n,3a)', '(n,2p)', '(n,pa)', '(n,t2a)', '(n,d2a)',
+                '(n,pd)', '(n,pt)', '(n,da)',
+                'nu-fission', 'nu-scatter'
+                ]
+tallies.append(rates)
+
 # Resonance Escape Probability tallies
 therm_abs_rate = openmc.Tally(name='therm. abs. rate')
 therm_abs_rate.scores = ['absorption']
@@ -332,6 +356,42 @@ therm_fiss_rate = openmc.Tally(name='therm. fiss. rate')
 therm_fiss_rate.scores = ['nu-fission']
 therm_fiss_rate.filters = [openmc.EnergyFilter([0., 0.625])]
 tallies.append(therm_fiss_rate)
+
+# Current through surfaces
+tally = openmc.Tally(name='surface current')
+tally.filters = [allsurfacefilter, energyfilter, allcellfromfilter]
+tally.scores = ['current']
+tallies.append(tally)
+
+# Current with cells, fromcells and surface filters
+tally = openmc.Tally(name='plain surface current')
+tally.filters = [allsurfacefilter]
+tally.scores = ['current']
+tallies.append(tally)
+
+tally = openmc.Tally(name='plain cell current')
+tally.filters = [allcellfilter]
+tally.scores = ['current']
+tallies.append(tally)
+
+tally = openmc.Tally(name='plain from cell current')
+tally.filters = [allcellfromfilter]
+tally.scores = ['current']
+tallies.append(tally)
+
+tally = openmc.Tally(name='leaked neutrons with birth location')
+tally.filters = [allcellfilter, cellbornfilter]
+tally.scores = ['flux']
+tallies.append(tally)
+
+tally = openmc.Tally(name='total flux')
+tally.scores = ['flux']
+tallies.append(tally)
+
+tally = openmc.Tally(name='cellwise flux')
+tally.filters = [allcellfilter]
+tally.scores = ['flux']
+tallies.append(tally)
 
 for geo in geometries:
     tallies.export_to_xml(os.path.join(fspath, geo, "tallies.xml"))

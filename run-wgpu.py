@@ -24,6 +24,7 @@ with open("calculation.json", 'r') as f:
     f.close()
 
 for geo in geometries:
+    print(os.path.join("eigenvalue", geo))
     openmc.run(cwd = os.path.join("eigenvalue", geo))
     openmc.run(cwd = os.path.join("fixed-source", geo))
 for age in ages:
