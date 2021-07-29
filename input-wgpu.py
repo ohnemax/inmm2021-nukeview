@@ -58,10 +58,12 @@ geometries = ["pit-outer",
 
 evpath = os.path.join(basepath, "eigenvalue")
 fspath = os.path.join(basepath, "fixed-source")
+pspath = os.path.join(basepath, "point-source")
 if not os.path.exists(basepath):
     os.mkdir(basepath)
     os.mkdir(evpath)
     os.mkdir(fspath)
+    os.mkdir(pspath)
     for geo in geometries:
         os.mkdir(os.path.join(evpath, geo))
         os.mkdir(os.path.join(fspath, geo))
@@ -145,6 +147,7 @@ materiallist = [wpuMat[0], # default age = 0 years
 materials = openmc.Materials(materiallist)
 materials.cross_sections = cspath
 
+
 for geo in geometries:
     materials.export_to_xml(os.path.join(evpath, geo, "materials.xml"))
     materials.export_to_xml(os.path.join(fspath, geo, "materials.xml"))
@@ -157,6 +160,9 @@ for age in ages:
     materials.export_to_xml(os.path.join(evpath, "full-{:.2f}".format(age), "materials.xml"))
     materials.export_to_xml(os.path.join(fspath, "full-{:.2f}".format(age), "materials.xml"))
 
+materials = openmc.Materials()
+materials.cross_sections = cspath
+materials.export_to_xml(os.path.join(pspath, "materials.xml"))
 
 ###############################################################################
 # Geometry
@@ -267,6 +273,17 @@ plt.figure(figsize=(5, 5))
 root.plot(width=(47, 47))
 plt.title("Geometry of Fetter model in OpenMC")
 plt.savefig(os.path.join(basepath, "fetter_geometry.png"))
+
+#*******************************************************************************
+# just for point source
+outSurface = openmc.Sphere(r = outOR, boundary_type='vacuum')
+outCell = openmc.Cell()
+outCell.region = -outSurface
+outCell.name = "Outside (vacuum)"
+
+root = openmc.Universe(cells = [outCell])
+geometry = openmc.Geometry(root)
+geometry.export_to_xml(os.path.join(pspath, "geometry.xml"))
 
 
 ###############################################################################
@@ -399,7 +416,14 @@ for geo in geometries:
 for age in ages:
     tallies.export_to_xml(os.path.join(fspath, "full-{:.2f}".format(age)))
     tallies.export_to_xml(os.path.join(evpath, "full-{:.2f}".format(age)))
-                 
+
+tallies = openmc.Tallies()
+tally = openmc.Tally(name='energy')
+tally.filters = [energyfilter]
+tally.scores = ['flux']
+tallies.append(tally)
+tallies.export_to_xml(os.path.join(pspath, "tallies.xml"))
+
 ###############################################################################
 # Source & Settings
 ###############################################################################
@@ -438,6 +462,7 @@ settings.source = fssrc
 for geo in geometries:
     settings.export_to_xml(os.path.join(fspath, geo, "settings.xml"))
 
+
 for age in ages:
     fssrc = []
     subset = puagedf.loc[(slice(None), age), :]
@@ -451,6 +476,17 @@ for age in ages:
     
         settings.export_to_xml(os.path.join(fspath, "full-{:.2f}".format(age)))
 
+normalizationconstant = sum(pudf['sfneutrons'] * pudf['wo'])
+fssrc = []
+for iso in pudf.index:
+    tmpsrc = openmc.Source(particle = 'neutron')
+    tmpsrc.energy = openmc.stats.Watt(a=1/pudf.loc[iso, 'watt-a'], b=pudf.loc[iso, 'watt-b'])
+    tmpsrc.strength = pudf.loc[iso, 'sfneutrons'] * pudf.loc[iso, 'wo'] / normalizationconstant
+    fssrc.append(tmpsrc)
+settings.source = fssrc
+        
+settings.export_to_xml(os.path.join(pspath, "settings.xml"))
+        
 mass = 4000        
 for age in ages:
     sourcesum = 0
