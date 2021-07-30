@@ -262,7 +262,7 @@ ywidth = sum(ysurfaceincrements.values())
 
 #adjust to make square
 
-newwidth = 10000
+newwidth = 20000
 
 if xwidth < newwidth and ywidth < newwidth:
     print("Adjusting margins to make a square of {:.0f}m side length".format(newwidth))
@@ -287,9 +287,6 @@ for sid, inc in xsurfaceincrements.items():
     val += inc
     surfaces[sid] = openmc.XPlane(val, surface_id = sid)
 
-# Define outer surfaces with vacuum boundary type
-surfaces[1].boundary_type = 'vacuum'
-surfaces[220].boundary_type = 'vacuum'
 
 # Special surfaces for doors
 surfaces[2] = openmc.XPlane(surfaces[7].x0 + thickD, surface_id = 2)
@@ -318,11 +315,6 @@ for sid, inc in ysurfaceincrements.items():
     val += inc
     surfaces[sid] = openmc.YPlane(val, surface_id = sid)
 
-# Define outer surfaces with vacuum boundary type
-surfaces[990].boundary_type = 'vacuum'
-surfaces[1120].boundary_type = 'vacuum'
-    
-
 # surface for weapon doors
 surfaces[1032] = openmc.YPlane(surfaces[1030].y0 + thickE, surface_id = 1032)
 
@@ -349,9 +341,6 @@ for sid, inc in surfaceincrements.items():
     val += inc
     surfaces[sid] = openmc.ZPlane(val, surface_id = sid)
 
-# Define outer surfaces with vacuum boundary type
-surfaces[2000].boundary_type = 'vacuum'
-surfaces[2090].boundary_type = 'vacuum'
 
 a, b, c, d = helper.planeparameter3points([surfaces[20].x0, surfaces[1000].y0, surfaces[2040].z0 + disth],
                                    [surfaces[30].x0, surfaces[1000].y0, surfaces[2040].z0 + disth],
@@ -373,6 +362,24 @@ a, b, c, d = helper.planeparameter3points([surfaces[20].x0, surfaces[1110].y0 + 
                                    [surfaces[20].x0, surfaces[1110].y0, surfaces[2040].z0 + disth])
 surfaces[2230] = openmc.Plane(a, b, c, d, surface_id = 2230)
 
+if cosmicray:
+    surfaces[1].boundary_type = 'periodic'
+    surfaces[1].periodic_surface = surfaces[220]
+    surfaces[220].boundary_type = 'periodic'
+    surfaces[220].periodic_surface = surfaces[1]
+    surfaces[990].boundary_type = 'periodic'
+    surfaces[990].periodic_surface = surfaces[1120]
+    surfaces[1120].boundary_type = 'periodic'
+    surfaces[1120].periodic_surface = surfaces[990]
+    surfaces[2000].boundary_type = 'vacuum'
+    surfaces[2090].boundary_type = 'vacuum'
+else:
+    surfaces[1].boundary_type = 'vacuum'
+    surfaces[220].boundary_type = 'vacuum'
+    surfaces[990].boundary_type = 'vacuum'
+    surfaces[1120].boundary_type = 'vacuum'
+    surfaces[2000].boundary_type = 'vacuum'
+    surfaces[2090].boundary_type = 'vacuum'
 
 # cells: base concrete
 baseconcretecells = []
@@ -918,6 +925,7 @@ settings.inactive = 0
 settings.batches = 10
 settings.particles = particles
 settings.statepoint = {'batches': range(1, batches + 1)}
+settings.output = {'tallies': False}
 if survival:
     settings.survival_biasing = True
 settings.source = source
