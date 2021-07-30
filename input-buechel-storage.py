@@ -236,7 +236,7 @@ ymax = pasd1 + outermarginy
 xwidth = xmax - xmin
 ywidth = ymax - ymin
 
-newwidth = 10000
+newwidth = 20000
 if xwidth < newwidth and ywidth < newwidth:
     print("Adjusting margins to make a square of {:.0f}m side length".format(newwidth))
     print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
@@ -268,9 +268,6 @@ surfacex = { 1: xmin, # never set surface id to 0 - then c function can't find c
 for sid, val in surfacex.items():
     surfaces[sid] = openmc.XPlane(val, surface_id = sid)
 
-surfaces[1].boundary_type = 'vacuum'
-surfaces[60].boundary_type = 'vacuum'
-
 # z surfaces + cylinders
 zmin = 0
 zmax = pasr1 + outermarginz
@@ -296,8 +293,6 @@ a, b, c, d = helper.planeparameter3points([pasw2, 0, pash4 + pash1],
                                    [pasw2, pasd2, pash4 + pash1])
 surfaces[2070] = openmc.Plane(a, b, c, d, surface_id = 2070)
 
-surfaces[2000].boundary_type = 'vacuum'
-surfaces[2050].boundary_type = 'vacuum'
     
 # y surfaces pas
 
@@ -311,9 +306,6 @@ surfaces[1040] = openmc.YPlane(pasd1 - pash1, surface_id = 1040)
 surfaces[1050] = openmc.YPlane(pasd1, surface_id = 1050)
 
 surfaces[1060] = openmc.YPlane(ymax, surface_id = 1060)
-
-surfaces[1000].boundary_type = 'vacuum'
-surfaces[1060].boundary_type = 'vacuum'
 
 
 # x surfaces vault
@@ -348,6 +340,29 @@ surfaces[3210] = openmc.ZPlane(zoffset - vaultd1, surface_id = 3210)
 surfaces[3200] = openmc.ZPlane(zoffset - vaultd1 - vaultt1, surface_id = 3200)
 
 vaultregion = +surfaces[3000] & -surfaces[3070] & +surfaces[3100] & -surfaces[3170] & +surfaces[3200] & -surfaces[3250]
+
+if cosmicray:
+    surfaces[1].boundary_type = 'periodic'
+    surfaces[1].periodic_surface = surfaces[60]
+    surfaces[60].boundary_type = 'periodic'
+    surfaces[60].periodic_surface = surfaces[1]
+    surfaces[1000].boundary_type = 'periodic'
+    surfaces[1000].periodic_surface = surfaces[1060]
+    surfaces[1060].boundary_type = 'periodic'
+    surfaces[1060].periodic_surfaces = surfaces[1000]
+    surfaces[2000].boundary_type = 'vacuum'
+    surfaces[2050].boundary_type = 'vacuum'
+else:
+    surfaces[1].boundary_type = 'vacuum'
+    surfaces[60].boundary_type = 'vacuum'
+    surfaces[2000].boundary_type = 'vacuum'
+    surfaces[2050].boundary_type = 'vacuum'
+    surfaces[1000].boundary_type = 'vacuum'
+    surfaces[1060].boundary_type = 'vacuum'
+
+
+    
+
 
 pascells = []
 soilcell = openmc.Cell()
@@ -726,6 +741,8 @@ settings.inactive = 0
 settings.batches = batches
 settings.particles = particles
 settings.statepoint = {'batches': range(1, batches + 1)}
+settings.output = {'tallies': False}
+
 if survival:
     settings.survival_biasing = True
     cutoff = {}
