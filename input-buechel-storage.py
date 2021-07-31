@@ -238,7 +238,7 @@ ywidth = ymax - ymin
 
 newwidth = 20000
 if xwidth < newwidth and ywidth < newwidth:
-    print("Adjusting margins to make a square of {:.0f}m side length".format(newwidth))
+    print("Adjusting margins to make a square of {:.0f}m side length".format(newwidth / 100))
     print("x", xmin, xmax, xwidth, "y", ymin, ymax, ywidth)
     additionalxmargin = (newwidth - xwidth) / 2
     xmin = xmin - additionalxmargin
