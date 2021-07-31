@@ -67,14 +67,6 @@ if os.path.exists(os.path.join(pspath, "statepoint.{:d}.h5".format(batches))):
     tally = sp.get_tally(name = 'energy')
     newsourcedf = tally.get_pandas_dataframe()
 
-agedfdict = {'type': [],
-             'ages': [],
-             'geometry': [],
-             'leak': [],
-             'keff': [],
-             'M': [],
-             'kefftally': [],
-             'Mtally': []}
 fluxdf = pd.DataFrame(columns = ['type', 'age', 'cell', 'energy low [eV]', 'energy high [eV]', 'nuclide', 'score', 'mean', 'std. dev.'])
 sourcedf = pd.DataFrame(columns = ['type', 'energy low [eV]', 'energy high [eV]', 'p', 'age'])
 currentdf = pd.DataFrame(columns = ['type', 'age', 'surface', 'energy low [eV]', 'energy high [eV]', 'nuclide', 'score', 'mean', 'std. dev.', 'cellfrom'])
@@ -88,19 +80,13 @@ for geom in geometries:
     if os.path.exists(os.path.join(evpath, "{:s}/statepoint.{:d}.h5".format(geom, batches + 20))):
         summary = os.path.join(evpath, "{:s}/summary.h5".format(geom))
         sp = openmc.StatePoint(os.path.join(evpath, "{:s}/statepoint.{:d}.h5".format(geom, batches + 20)))
-        agedfdict['ages'].append(0)
-        agedfdict['geometry'].append(geom)
-        agedfdict['type'].append('eigenvalue')
-        agedfdict['keff'].append(sp.k_combined)
-        agedfdict['M'].append(1 / (1 - sp.k_combined))
-
+ 
         fiss_rate = sp.get_tally(name='fiss. rate')
         abs_rate = sp.get_tally(name='abs. rate')
 
         # Get the leakage tally
         leak = sp.get_tally(name='leakage')
         leak = leak.summation(filter_type=openmc.MeshSurfaceFilter, remove_filter=True)
-        agedfdict['leak'].append(leak.mean.flatten()[0])
 
         ratetally = sp.get_tally(name='various reaction rates')
         tempdf = ratetally.get_pandas_dataframe()
@@ -116,17 +102,10 @@ for geom in geometries:
         # Compute k-infinity using tally arithmetic
         keff = fiss_rate / (abs_rate + leak)
         keffval = keff.get_pandas_dataframe().loc[0, 'mean']
-        agedfdict['kefftally'].append(keffval)
-        agedfdict['Mtally'].append(1/(1-keffval))
 
     if os.path.exists(os.path.join(fspath, "{:s}/statepoint.{:d}.h5".format(geom, batches))):
         summary = os.path.join(fspath, "{:s}/summary.h5".format(geom))
         sp = openmc.StatePoint(os.path.join(fspath, "{:s}/statepoint.{:d}.h5".format(geom, batches)))
-        agedfdict['ages'].append(0)
-        agedfdict['geometry'].append(geom)
-        agedfdict['type'].append('fixed-source')
-        agedfdict['keff'].append(np.nan)
-        agedfdict['M'].append(np.nan)
 
         fiss_rate = sp.get_tally(name='fiss. rate')
         abs_rate = sp.get_tally(name='abs. rate')
@@ -134,7 +113,6 @@ for geom in geometries:
         # Get the leakage tally
         leak = sp.get_tally(name='leakage')
         leak = leak.summation(filter_type=openmc.MeshSurfaceFilter, remove_filter=True)
-        agedfdict['leak'].append(leak.mean.flatten()[0])
 
         ratetally = sp.get_tally(name='various reaction rates')
         tempdf = ratetally.get_pandas_dataframe()
@@ -150,8 +128,6 @@ for geom in geometries:
         # Compute k-infinity using tally arithmetic
         keff = fiss_rate / (abs_rate + leak)
         keffval = keff.get_pandas_dataframe().loc[0, 'mean']
-        agedfdict['kefftally'].append(keffval)
-        agedfdict['Mtally'].append(1/(1-keffval))
     
 print("Reading different ages")
 for age in ages:
@@ -159,11 +135,6 @@ for age in ages:
         print(age, "eigenvalue")
         summary = openmc.Summary(os.path.join(evpath, "full-{:.2f}/summary.h5".format(age)))
         sp = openmc.StatePoint(os.path.join(evpath, "full-{:.2f}/statepoint.{:d}.h5".format(age, batches + 20)))
-        agedfdict['ages'].append(age)
-        agedfdict['geometry'].append("")
-        agedfdict['type'].append('eigenvalue')
-        agedfdict['keff'].append(sp.k_combined)
-        agedfdict['M'].append(1 / (1 - sp.k_combined))
 
         fiss_rate = sp.get_tally(name='fiss. rate')
         abs_rate = sp.get_tally(name='abs. rate')
@@ -171,7 +142,6 @@ for age in ages:
         # Get the leakage tally
         leak = sp.get_tally(name='leakage')
         leak = leak.summation(filter_type=openmc.MeshSurfaceFilter, remove_filter=True)
-        agedfdict['leak'].append(leak.mean.flatten()[0])
 
         ratetally = sp.get_tally(name='various reaction rates')
         tempdf = ratetally.get_pandas_dataframe()
@@ -187,8 +157,6 @@ for age in ages:
         # Compute k-infinity using tally arithmetic
         keff = fiss_rate / (abs_rate + leak)
         keffval = keff.get_pandas_dataframe().loc[0, 'mean']
-        agedfdict['kefftally'].append(keffval)
-        agedfdict['Mtally'].append(1/(1-keffval))
 
         fluxtally = sp.get_tally(name='flux')
         tempdf = fluxtally.get_pandas_dataframe()
@@ -236,16 +204,10 @@ for age in ages:
         print(age, "fixed-source")
         summary = openmc.Summary(os.path.join(fspath, "full-{:.2f}/summary.h5".format(age)))
         sp = openmc.StatePoint(os.path.join(fspath, "full-{:.2f}/statepoint.{:d}.h5".format(age, batches)))
-        agedfdict['ages'].append(age)
-        agedfdict['geometry'].append("")
-        agedfdict['type'].append('fixed-source')
-        agedfdict['keff'].append(np.nan)
-        agedfdict['M'].append(np.nan)
 
         # Get the leakage tally
         leak = sp.get_tally(name='leakage')
         leak = leak.summation(filter_type=openmc.MeshSurfaceFilter, remove_filter=True)
-        agedfdict['leak'].append(leak.mean.flatten()[0])
 
         ratetally = sp.get_tally(name='various reaction rates')
         tempdf = ratetally.get_pandas_dataframe()
@@ -264,8 +226,6 @@ for age in ages:
         # Compute k-infinity using tally arithmetic
         keff = fiss_rate / (abs_rate + leak)
         keffval = keff.get_pandas_dataframe().loc[0, 'mean']
-        agedfdict['kefftally'].append(keffval)
-        agedfdict['Mtally'].append(1/(1-keffval))
 
         fluxtally = sp.get_tally(name='flux')
         tempdf = fluxtally.get_pandas_dataframe()
@@ -333,8 +293,6 @@ ratedf['serber-fissionalpha'] = (ratedf[('mean', 'absorption')] - ratedf[('mean'
 ratedf['serber-M_L'] = 1 + ratedf['producingabsorption'] * (ratedf['totalnu'] - 1 - ratedf['serber-alpha'])
 ratedf['serber-fissionM_L'] = 1 + ratedf[('mean', 'fission')] * (ratedf['fissionnu'] - 1 - ratedf['serber-fissionalpha'])
 ratedf['reilly-M_L'] = (1 - ratedf['tp'] - ratedf['tp_c']) / (1 - ratedf['tp'] * ratedf['totalnu'])
-
-agedf = pd.DataFrame(agedfdict)
 
 ################################################################################
 # print(fluxdf[(fluxdf['type'] == 'fixed-source') & (fluxdf['cell'] == 7)])
