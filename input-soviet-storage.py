@@ -20,6 +20,7 @@ weaponage = 0 # years
 survival = False
 discard = False
 maxenergy = 2e7
+weightcutoff = 0.25
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--fetter", action="store_true",
@@ -30,6 +31,8 @@ parser.add_argument("-p", "--plot", action="store_true",
                     help="plot some cuts through the geometry")
 parser.add_argument("-s", "--survival", action="store_true",
                     help="turn on survival biasing")
+parser.add_argument("-w", "--weightcutoff", type = float,
+                    help="weight cutoff value (only used if survial biasing is on)")
 parser.add_argument("-b", "--basepath", 
                     help="set basepath for calculation")
 parser.add_argument("-m", "--maxenergy", type = float,
@@ -50,6 +53,8 @@ if args.plot:
     plot = True
 if args.survival:
     survival = True
+if not args.weightcutoff is None:
+    weightcutoff = args.weightcutoff
 if not args.basepath is None:
     basepath = args.basepath
 if not args.maxenergy is None:
@@ -928,6 +933,9 @@ settings.statepoint = {'batches': range(1, batches + 1)}
 settings.output = {'tallies': False}
 if survival:
     settings.survival_biasing = True
+    cutoff = {}
+    cutoff['weight'] = weightcutoff
+    settings.cutoff = cutoff
 settings.source = source
 
 settings.export_to_xml(os.path.join(basepath, "settings.xml"))
