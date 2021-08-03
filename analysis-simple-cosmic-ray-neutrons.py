@@ -370,7 +370,7 @@ centerlinedf.set_index(['source', 'z'], inplace=True)
 # center: shielded / unshielded
 # right: measurement time
 
-factor = 5
+factor = 3
 fig, ax = plt.subplots(nrows = 1, ncols = 3, squeeze = False, figsize=(3 * factor, 1 * factor))
 
 xvals = np.arange(xwidth) - xcenter
@@ -409,7 +409,8 @@ ax[0][1].set_xlim(0, 100)
 ax[0][1].grid()
 ax[0][1].legend()
 
-ax[0][1].title.set_text("Detector with/without z-direction Shielding")
+# ax[0][1].title.set_text("Detector with/without z-direction Shielding")
+ax[0][1].title.set_text("Effect of z-direction Shielding")
 
 #*******************************************************************************
 # plot measurement time - five sigma
@@ -419,26 +420,26 @@ tdata1 = m ** 2 * centerlinedf.loc[('soil', weaponz), 'data'] / (centerlinedf.lo
 tdata1[xcenter] = np.nan # no useful calculation possible here
 ax[0][2].plot(xvals, tdata1, label = "Soil - Unshielded")
 
-tdata = m ** 2 * centerlinedf.loc[('concrete', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'] ** 2)
-tdata[xcenter] = np.nan # no useful calculation possible here
-ax[0][2].plot(xvals, tdata, label = "Concrete - Unshielded")
+# tdata = m ** 2 * centerlinedf.loc[('concrete', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'] ** 2)
+# tdata[xcenter] = np.nan # no useful calculation possible here
+# ax[0][2].plot(xvals, tdata, label = "Concrete - Unshielded")
 
-tdata = m ** 2 * centerlinedf.loc[('water', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-water', weaponz), 'data'] ** 2)
-tdata[xcenter] = np.nan # no useful calculation possible here
-ax[0][2].plot(xvals, tdata, label = "Water - Unshielded")
+# tdata = m ** 2 * centerlinedf.loc[('water', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-water', weaponz), 'data'] ** 2)
+# tdata[xcenter] = np.nan # no useful calculation possible here
+# ax[0][2].plot(xvals, tdata, label = "Water - Unshielded")
 
 tdata2 = m ** 2 * centerlinedf.loc[('soil-shielded', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-soil-shielded', weaponz), 'data'] ** 2)
 tdata2[xcenter] = np.nan # no useful calculation possible here
-ax[0][2].plot(xvals, tdata, label = "Soil - Shielded")
+ax[0][2].plot(xvals, tdata2, label = "Soil - Shielded")
 
 ax[0][2].plot(xvals, tdata1 - tdata2, label = "Difference")
 
 ax[0][2].set_ylabel("Time [s]")
 ax[0][2].set_xlabel("Horizontal Distance [m]")
 
-ax[0][2].axhline(60, color = "orange", linewidth = 2)
-ax[0][2].axhline(3600, color = "orange", linewidth = 2)
-ax[0][2].axhline(3600 * 24, color = "orange", linewidth = 2)
+ax[0][2].axhline(60, color = colors[6], linewidth = 2)
+ax[0][2].axhline(3600, color = colors[6], linewidth = 2)
+ax[0][2].axhline(3600 * 24, color = colors[6], linewidth = 2)
 
 ax[0][2].set_xlim(0, 100)
 ax[0][2].set_yscale("log")
@@ -447,6 +448,8 @@ ax[0][2].grid()
 ax[0][2].legend()
 
 ax[0][2].title.set_text("Measurement Time")
+
+fig.tight_layout()
 
 plt.savefig(os.path.join("plots-for-paper", "simple-cosmic-centerline.pdf"))
 plt.savefig(os.path.join("plots-for-paper", "simple-cosmic-centerline.png"))
