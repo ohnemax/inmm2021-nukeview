@@ -3,6 +3,8 @@ import openmc
 import pandas as pd
 import copy
 
+from uncertainties import ufloat
+
 def planeparameter3points(p1, p2, p3):
     if len(p1) != 3 and len(p2) != 3 and len(p3) != 3:
         print("All points need 3 dimensions")
@@ -54,9 +56,15 @@ def createwgpuvec():
 class puvector:
     def __init__(self):
         pudict = {'name': ['Pu238', 'Pu239', 'Pu240', 'Pu241', 'Pu242', 'Am241'],
-                  'sfneutrons': [2630, 0.0152, 1031, 0.001723, 1722, 1.47], # PhD Thesis Moritz
+                  'sfneutrons-ufloat': [ufloat(2630, 140),
+                                        ufloat(0.0152, 0.0029),
+                                        ufloat(1031, 36),
+                                        ufloat(0.0017233, 0.000035),
+                                        ufloat(1722, 21),
+                                        ufloat(1.47, 0.37)], # PhD Thesis Moritz
                   'watt-a': [1.17948e-6, 1.12963e-6, 1.25797e-6, 1.18698e-6, 1.22078e-6, 1.07179e-6], # Verbeke et al. 2010
                   'watt-b': [4.16933e-6, 3.80269e-6, 4.68927e-6, 4.15150e-6, 4.36668e-6, 3.46195e-6]} # Verbeke et al. 2010
+        pudict['sfneutrons'] = [x.n for x in pudict['sfneutrons-ufloat']]
         pudict['mass'] = [openmc.data.atomic_mass(iso) for iso in pudict['name']]
         self.pudf = pd.DataFrame(pudict)
         self.pudf['wo'] = 0
