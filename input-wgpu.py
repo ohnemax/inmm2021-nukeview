@@ -276,12 +276,12 @@ plt.savefig(os.path.join(basepath, "fetter_geometry.png"))
 
 #*******************************************************************************
 # just for point source
-outSurface = openmc.Sphere(r = outOR, boundary_type='vacuum')
-outCell = openmc.Cell()
-outCell.region = -outSurface
-outCell.name = "Outside (vacuum)"
+psoutSurface = openmc.Sphere(r = outOR, boundary_type='vacuum')
+psoutCell = openmc.Cell()
+psoutCell.region = -psoutSurface
+psoutCell.name = "Outside (vacuum)"
 
-root = openmc.Universe(cells = [outCell])
+root = openmc.Universe(cells = [psoutCell])
 geometry = openmc.Geometry(root)
 geometry.export_to_xml(os.path.join(pspath, "geometry.xml"))
 
