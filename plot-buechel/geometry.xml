@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='utf-8'?>
+<geometry>
+  <cell id="1" material="5" name="Soil Layer" region="10 -50 1010 -1050 2000 -2010 ~(3000 -3070 3100 -3170 3200 -3250)" universe="1" />
+  <cell id="2" material="2" name="Concrete Floor Layer" region="10 -50 1010 -1050 2010 -2020 ~(3000 -3070 3100 -3170 3200 -3250)" universe="1" />
+  <cell id="3" material="3" name="PAS Roof" region="20 -40 1010 -1050 2030 -2040" universe="1" />
+  <cell id="4" material="3" name="PAS Left Wall" region="2020 -2060 -20 1010 -1050" universe="1" />
+  <cell id="5" material="3" name="PAS Right Wall" region="2020 -2070 40 1010 -1050" universe="1" />
+  <cell id="6" material="3" name="PAS Back Wall" region="20 -40 1040 -1050 2020 -2030" universe="1" />
+  <cell id="7" material="1" name="PAS Main Door" region="20 -40 1020 -1030 2020 -2030" universe="1" />
+  <cell id="8" material="4" name="PAS Air" region="20 -40 1010 -1040 2020 -2030 ~(20 -40 1020 -1030 2020 -2030)" universe="1" />
+  <cell id="9" material="4" name="PAS Outer Air" region="10 -50 1010 -1050 2020 2040 -2050 ~(2020 -2060 -20 1010 -1050) ~(2020 -2070 40 1010 -1050)" universe="1" />
+  <cell id="10" material="3" name="Vault Concrete Outer Layer" region="3000 -3070 3100 -3170 3200 -3250 ~(3010 -3060 3110 -3160 3210 -3240)" universe="1" />
+  <cell id="11" material="1" name="Vault Pole" region="3020 -3030 3120 -3130 3210 -3240" universe="1" />
+  <cell id="12" material="1" name="Vault Pole" region="3020 -3030 3140 -3150 3210 -3240" universe="1" />
+  <cell id="13" material="1" name="Vault Pole" region="3040 -3050 3120 -3130 3210 -3240" universe="1" />
+  <cell id="14" material="1" name="Vault Pole" region="3040 -3050 3140 -3150 3210 -3240" universe="1" />
+  <cell id="15" material="1" name="Vault Shelf" region="3030 -3040 3120 -3150 3220 -3230" universe="1" />
+  <cell id="16" material="4" name="Vault Air" region="3010 -3060 3110 -3160 3210 -3240 ~(3030 -3040 3120 -3150 3220 -3230) ~(3020 -3030 3120 -3130 3210 -3240) ~(3020 -3030 3140 -3150 3210 -3240) ~(3040 -3050 3120 -3130 3210 -3240) ~(3040 -3050 3140 -3150 3210 -3240) 8" universe="1" />
+  <cell id="17" material="5" name="Margin - Soil" region="1 -60 1000 -1060 2000 -2020 ~(10 -50 1010 -1050)" universe="1" />
+  <cell id="18" material="4" name="Margin - Air" region="1 -60 1000 -1010 2020 -2050" universe="1" />
+  <cell id="19" material="4" name="Margin - Air" region="1 -60 1050 -1060 2020 -2050" universe="1" />
+  <cell id="20" material="4" name="Margin - Air" region="1 -10 1010 -1050 2020 -2050" universe="1" />
+  <cell id="21" material="4" name="Margin - Air" region="50 -60 1010 -1050 2020 -2050" universe="1" />
+  <cell id="22" material="void" name="Center of weapon" region="-2" universe="2" />
+  <cell id="23" material="6" name="Pit" region="2 -3" universe="2" />
+  <cell id="24" material="7" name="Reflector" region="3 -4" universe="2" />
+  <cell id="25" material="8" name="Tamper" region="4 -5" universe="2" />
+  <cell id="26" material="9" name="Conventional Explosive" region="5 -6" universe="2" />
+  <cell id="27" material="10" name="Aluminum Case" region="6 -7" universe="2" />
+  <cell id="28" material="4" name="Air around weapon" region="7" universe="2" />
+  <cell fill="2" id="29" region="-8" translation="259.6754877135809 969.1029034356546 96.77880127686072" universe="1" />
+  <surface boundary="vacuum" coeffs="-10000.0" id="1" type="x-plane" />
+  <surface coeffs="0.0 0.0 0.0 4.25" id="2" type="sphere" />
+  <surface coeffs="0.0 0.0 0.0 5" id="3" type="sphere" />
+  <surface coeffs="0.0 0.0 0.0 7" id="4" type="sphere" />
+  <surface coeffs="0.0 0.0 0.0 10" id="5" type="sphere" />
+  <surface coeffs="0.0 0.0 0.0 20" id="6" type="sphere" />
+  <surface coeffs="0.0 0.0 0.0 21" id="7" type="sphere" />
+  <surface coeffs="259.6754877135809 969.1029034356546 96.77880127686072 22" id="8" type="sphere" />
+  <surface coeffs="-1385.0" id="10" type="x-plane" />
+  <surface coeffs="-750.113449523183" id="20" type="x-plane" />
+  <surface coeffs="750.113449523183" id="40" type="x-plane" />
+  <surface coeffs="1385.0" id="50" type="x-plane" />
+  <surface boundary="vacuum" coeffs="10000.0" id="60" type="x-plane" />
+  <surface boundary="vacuum" coeffs="-8460.872223354392" id="1000" type="y-plane" />
+  <surface coeffs="0" id="1010" type="y-plane" />
+  <surface coeffs="300" id="1020" type="y-plane" />
+  <surface coeffs="310" id="1030" type="y-plane" />
+  <surface coeffs="2968.0385194207793" id="1040" type="y-plane" />
+  <surface coeffs="3078.2555532912165" id="1050" type="y-plane" />
+  <surface boundary="vacuum" coeffs="11539.127776645608" id="1060" type="y-plane" />
+  <surface boundary="vacuum" coeffs="0" id="2000" type="z-plane" />
+  <surface coeffs="161.51225049821085" id="2010" type="z-plane" />
+  <surface coeffs="271.72928436864817" id="2020" type="z-plane" />
+  <surface coeffs="0.0 0.0 971.2886398438208" id="2030" type="y-cylinder" />
+  <surface coeffs="0.0 0.0 1081.5056737142581" id="2040" type="y-cylinder" />
+  <surface boundary="vacuum" coeffs="1581.5056737142581" id="2050" type="z-plane" />
+  <surface coeffs="-152208.81289049654 0.0 190465.9651430451 262564386.25824124" id="2060" type="plane" />
+  <surface coeffs="152208.81289049654 -0.0 190465.9651430451 262564386.25824124" id="2070" type="plane" />
+  <surface coeffs="132.93517840052596" id="3000" type="x-plane" />
+  <surface coeffs="164.87237646815882" id="3010" type="x-plane" />
+  <surface coeffs="177.5197194633279" id="3020" type="x-plane" />
+  <surface coeffs="190.16706245849699" id="3030" type="x-plane" />
+  <surface coeffs="582.6645315947746" id="3040" type="x-plane" />
+  <surface coeffs="595.3118745899437" id="3050" type="x-plane" />
+  <surface coeffs="607.9592175851128" id="3060" type="x-plane" />
+  <surface coeffs="639.8964156527456" id="3070" type="x-plane" />
+  <surface coeffs="910.2170338704373" id="3100" type="y-plane" />
+  <surface coeffs="942.1542319380701" id="3110" type="y-plane" />
+  <surface coeffs="954.8015749332392" id="3120" type="y-plane" />
+  <surface coeffs="967.4489179284083" id="3130" type="y-plane" />
+  <surface coeffs="1024.65423193807" id="3140" type="y-plane" />
+  <surface coeffs="1037.3015749332392" id="3150" type="y-plane" />
+  <surface coeffs="1049.9489179284083" id="3160" type="y-plane" />
+  <surface coeffs="1081.886115996041" id="3170" type="y-plane" />
+  <surface coeffs="21.386289199566033" id="3200" type="z-plane" />
+  <surface coeffs="53.323487267198885" id="3210" type="z-plane" />
+  <surface coeffs="140.23411528652255" id="3220" type="z-plane" />
+  <surface coeffs="152.88145828169164" id="3230" type="z-plane" />
+  <surface coeffs="239.7920863010153" id="3240" type="z-plane" />
+  <surface coeffs="271.72928436864817" id="3250" type="z-plane" />
+</geometry>

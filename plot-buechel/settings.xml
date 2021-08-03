@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8'?>
+<settings>
+  <run_mode>fixed source</run_mode>
+  <particles>1</particles>
+  <batches>10</batches>
+  <inactive>0</inactive>
+  <source strength="0.0021119442495303726">
+    <space type="fission">
+      <parameters>254.67548771358088 964.1029034356546 91.77880127686072 264.6754877135809 974.1029034356546 101.77880127686072</parameters>
+    </space>
+    <energy parameters="847831.2476684641 4.16933e-06" type="watt" />
+  </source>
+  <source strength="0.00024240944277347247">
+    <space type="fission">
+      <parameters>254.67548771358088 964.1029034356546 91.77880127686072 264.6754877135809 974.1029034356546 101.77880127686072</parameters>
+    </space>
+    <energy parameters="885245.6113948816 3.80269e-06" type="watt" />
+  </source>
+  <source strength="0.9934971199691927">
+    <space type="fission">
+      <parameters>254.67548771358088 964.1029034356546 91.77880127686072 264.6754877135809 974.1029034356546 101.77880127686072</parameters>
+    </space>
+    <energy parameters="794931.5166498405 4.68927e-06" type="watt" />
+  </source>
+  <source strength="1.217783993228064e-07">
+    <space type="fission">
+      <parameters>254.67548771358088 964.1029034356546 91.77880127686072 264.6754877135809 974.1029034356546 101.77880127686072</parameters>
+    </space>
+    <energy parameters="842474.1781664393 4.1515e-06" type="watt" />
+  </source>
+  <source strength="0.004148404560104146">
+    <space type="fission">
+      <parameters>254.67548771358088 964.1029034356546 91.77880127686072 264.6754877135809 974.1029034356546 101.77880127686072</parameters>
+    </space>
+    <energy parameters="819148.4133095235 4.36668e-06" type="watt" />
+  </source>
+  <source strength="0.0">
+    <space type="fission">
+      <parameters>254.67548771358088 964.1029034356546 91.77880127686072 264.6754877135809 974.1029034356546 101.77880127686072</parameters>
+    </space>
+    <energy parameters="933018.5950605996 3.46195e-06" type="watt" />
+  </source>
+  <output>
+    <tallies>false</tallies>
+  </output>
+  <state_point>
+    <batches>1 2 3 4 5 6 7 8 9 10</batches>
+  </state_point>
+</settings>

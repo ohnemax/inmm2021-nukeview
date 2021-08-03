@@ -1,0 +1,126 @@
+<?xml version='1.0' encoding='utf-8'?>
+<materials>
+  <cross_sections>/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml</cross_sections>
+  <material id="1" name="Steel (for doors)">
+    <density units="g/cm3" value="7.82" />
+    <nuclide ao="0.022578078182" name="C12" />
+    <nuclide ao="0.000252921818" name="C13" />
+    <nuclide ao="0.057115528049999996" name="Fe54" />
+    <nuclide ao="0.02070621111" name="Fe57" />
+    <nuclide ao="0.8965916442599999" name="Fe56" />
+    <nuclide ao="0.00275561658" name="Fe58" />
+  </material>
+  <material id="2" name="Regular Concrete">
+    <density units="g/cm3" value="2.3" />
+    <nuclide ao="2.4977581199999997e-05" name="H2" />
+    <nuclide ao="0.1603550224188" name="H1" />
+    <nuclide ao="0.00021344635699999999" name="O17" />
+    <nuclide ao="0.5618429623698" name="O16" />
+    <nuclide ao="0.0011265912731999999" name="O18" />
+    <nuclide ao="0.021365" name="Na23" />
+    <nuclide ao="0.021343" name="Al27" />
+    <nuclide ao="0.0062740661396" name="Si30" />
+    <nuclide ao="0.0095176328996" name="Si29" />
+    <nuclide ao="0.1874393009608" name="Si28" />
+    <nuclide ao="0.00012030965000000001" name="Ca42" />
+    <nuclide ao="0.01802617895" name="Ca40" />
+    <nuclide ao="3.4772649999999996e-05" name="Ca48" />
+    <nuclide ao="2.510325e-05" name="Ca43" />
+    <nuclide ao="0.0003878917" name="Ca44" />
+    <nuclide ao="7.438000000000001e-07" name="Ca46" />
+    <nuclide ao="0.0002481787" name="Fe54" />
+    <nuclide ao="8.997274e-05" name="Fe57" />
+    <nuclide ao="0.00389587484" name="Fe56" />
+    <nuclide ao="1.197372e-05" name="Fe58" />
+  </material>
+  <material id="3" name="Wall Material">
+    <density units="g/cm3" value="2.321176470588234" />
+    <nuclide ao="2.5068208211048498e-05" name="H2" />
+    <nuclide ao="0.16093684402402542" name="H1" />
+    <nuclide ao="0.0002142208117079723" name="O17" />
+    <nuclide ao="0.5638815163815154" name="O16" />
+    <nuclide ao="0.0011306789227984904" name="O18" />
+    <nuclide ao="0.021442519359282524" name="Na23" />
+    <nuclide ao="0.021420439535931052" name="Al27" />
+    <nuclide ao="0.006296830548082938" name="Si30" />
+    <nuclide ao="0.009552166052151522" name="Si29" />
+    <nuclide ao="0.1881193933790001" name="Si28" />
+    <nuclide ao="0.00012074617361261431" name="Ca42" />
+    <nuclide ao="0.01809158395081985" name="Ca40" />
+    <nuclide ao="3.4898816793754056e-05" name="Ca48" />
+    <nuclide ao="2.519433297944812e-05" name="Ca43" />
+    <nuclide ao="0.00038929910070465757" name="Ca44" />
+    <nuclide ao="7.46498754946611e-07" name="Ca46" />
+    <nuclide ao="0.00048076534459872203" name="Fe54" />
+    <nuclide ao="0.00017429285974417314" name="Fe57" />
+    <nuclide ao="0.007546987755057508" name="Fe56" />
+    <nuclide ao="2.3195180013146212e-05" name="Fe58" />
+    <nuclide ao="9.158680001283477e-05" name="C12" />
+    <nuclide ao="1.0259642019716254e-06" name="C13" />
+  </material>
+  <material id="4" name="Air, Dry (near sea level)">
+    <density units="g/cm3" value="0.001205" />
+    <nuclide name="C12" wo="0.00012251284879063982" />
+    <nuclide name="C13" wo="1.4871512093601811e-06" />
+    <nuclide name="N14" wo="0.7523052447415977" />
+    <nuclide name="N15" wo="0.002962755258402448" />
+    <nuclide name="O17" wo="9.333460159276413e-05" />
+    <nuclide name="O16" wo="0.23116605552663208" />
+    <nuclide name="O18" wo="0.0005216098717751329" />
+    <nuclide name="Ar40" wo="0.012780805392164559" />
+    <nuclide name="Ar38" wo="7.667262798148065e-06" />
+    <nuclide name="Ar36" wo="3.852734503729188e-05" />
+  </material>
+  <material id="5" name="Earth, Typical Western US">
+    <density units="g/cm3" value="1.52" />
+    <nuclide ao="4.93469977e-05" name="H2" />
+    <nuclide ao="0.3168056530023" name="H1" />
+    <nuclide ao="0.00019009919900000002" name="O17" />
+    <nuclide ao="0.5003875381686" name="O16" />
+    <nuclide ao="0.0010033626324" name="O18" />
+    <nuclide ao="0.039951" name="Al27" />
+    <nuclide ao="0.0043718198908" name="Si30" />
+    <nuclide ao="0.0066319633707999995" name="Si29" />
+    <nuclide ao="0.13060921673839998" name="Si28" />
+  </material>
+  <material depletable="true" id="6" name="Weapon-grade Plutonium - 00 years old">
+    <density units="g/cm3" value="19.797699432227994" />
+    <nuclide name="Pu238" wo="5e-05" />
+    <nuclide name="Pu239" wo="0.993" />
+    <nuclide name="Pu240" wo="0.06" />
+    <nuclide name="Pu241" wo="0.0044" />
+    <nuclide name="Pu242" wo="0.00015" />
+    <nuclide name="Am241" wo="0.0" />
+    <nuclide name="O17" wo="8.053688748669143e-07" />
+    <nuclide name="O16" wo="0.0019946937456187704" />
+    <nuclide name="O18" wo="4.500885506362756e-06" />
+  </material>
+  <material id="7" name="Beryllium Reflector">
+    <density units="g/cm3" value="1.848" />
+    <nuclide ao="1.0" name="Be9" />
+  </material>
+  <material id="8" name="Tungsten Tamper">
+    <density units="g/cm3" value="19.3" />
+    <nuclide ao="0.3064" name="W184" />
+    <nuclide ao="0.265" name="W182" />
+    <nuclide ao="0.1431" name="W183" />
+    <nuclide ao="0.2843" name="W186" />
+    <nuclide ao="0.0012" name="W180" />
+  </material>
+  <material id="9" name="HMX explosive">
+    <density units="g/cm3" value="1.89" />
+    <nuclide ao="4.449709836e-05" name="H2" />
+    <nuclide ao="0.28566950290164006" name="H1" />
+    <nuclide ao="0.141274430154" name="C12" />
+    <nuclide ao="0.0015825698460000001" name="C13" />
+    <nuclide ao="0.284667429618" name="N14" />
+    <nuclide ao="0.0010465703820000001" name="N15" />
+    <nuclide ao="0.000108285606" name="O17" />
+    <nuclide ao="0.28503417210840004" name="O16" />
+    <nuclide ao="0.0005715422856" name="O18" />
+  </material>
+  <material id="10" name="Aluminum Case">
+    <density units="g/cm3" value="2.6989" />
+    <nuclide ao="1.0" name="Al27" />
+  </material>
+</materials>

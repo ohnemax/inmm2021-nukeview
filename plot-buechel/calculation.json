@@ -1,0 +1,1 @@
+{"particles": 1, "basepath": "plot-buechel/", "cspath": "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml", "batches": 10, "fettersource": true, "cosmicray": false, "discard": false, "maxenergy": 20000000.0, "weaponage": 0}
