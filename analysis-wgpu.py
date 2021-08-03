@@ -13,7 +13,7 @@ import openmc
 
 import helper
 
-basepath = 'cluster-results/fetter-20210715-run'
+basepath = 'cluster-results/fetter-20210728-100k'
 if len(sys.argv) == 2:
     basepath = sys.argv[1]
 
@@ -321,7 +321,7 @@ print(ratedf[['type', 'geometry', 'age', 'k-combined', 'keff', 'fissionkeff', 'M
 
 factor = 0.7
 fig, ax = plt.subplots(nrows = 1, ncols = 2,
-                       figsize=(12 * factor, 6 * factor), squeeze = False)
+                       figsize=(12 * factor, 4.8 * factor), squeeze = False)
 
 currentdfsel = currentdf[(currentdf['age'] == 0) & (currentdf['type'] == 'fixed-source')]
 tempdf = currentdfsel.groupby(['surface', 'cellfrom']).sum()
@@ -334,11 +334,10 @@ surfaces = surfaces[1:-1]
 meanvalues = meanvalues[1:-1]
 
 ax[0][0].bar(surfaces, meanvalues * nps)
-ax[0][0].title.set_text("Outward current through cell surface")
-ax[0][0].axes.set_ylabel("neutrons / s")
+# ax[0][0].title.set_text("Outward current through cell surface")
+ax[0][0].axes.set_ylabel("current [neutrons / s]")
 ax[0][0].axhline(nps, color = "orange", linewidth = 2)
 # ax[0][0].axes.set_xlabel("from Cell")
-ax[0][0].legend()
 ax[0][0].grid()
 fig.autofmt_xdate()
 
@@ -361,9 +360,9 @@ ax[0][1].plot(xvalues, plotvalues)
 ax[0][1].plot(xvalues, sourcevalues)
 ax[0][1].set_xscale("log")
 # ax[0][1].set_yscale("log")
-ax[0][1].axes.set_xlabel("Energy / eV")
-ax[0][1].axes.set_ylabel("Flux (neutron * cm)")
-ax[0][1].title.set_text("Neutron flux (outside)")
+ax[0][1].axes.set_xlabel("Energy [eV]")
+ax[0][1].axes.set_ylabel("Flux [neutron * cm]")
+# ax[0][1].title.set_text("Neutron flux (outside)")
 ax[0][1].grid()    
 
 fig.tight_layout()
