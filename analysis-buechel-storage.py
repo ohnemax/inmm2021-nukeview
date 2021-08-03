@@ -81,7 +81,7 @@ shieldedincurrentdf = shieldedincurrentdf.groupby([(meshstring, 'x'), (meshstrin
 shieldedincurrentdf.reset_index(inplace = True)
 
 shieldedcurrentdata = shieldedincurrentdf.sort_values([(meshstring, 'z'), (meshstring, 'y'), (meshstring, 'x')])['mean'].to_numpy()
-shieldedcurrentdata = currentdata.reshape((zwidth, ywidth, xwidth))
+shieldedcurrentdata = shieldedcurrentdata.reshape((zwidth, ywidth, xwidth))
 
 
 ################################################################################
