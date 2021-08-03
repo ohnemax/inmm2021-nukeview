@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 ###############################################################################
 import json
+from uncertainties import ufloat
 
 import openmc
 
@@ -53,7 +54,7 @@ age = weaponage
 puvec.createagedvector([age])
 sourcesum = 0
 for iso in puvec.pudf.index:
-    sourcesum += puvec.puagedf.loc[(iso, age), 'sfneutrons'] * puvec.puagedf.loc[(iso, age), 'wo']
+    sourcesum += puvec.puagedf.loc[(iso, age), 'sfneutrons-ufloat'] * puvec.puagedf.loc[(iso, age), 'wo']
 nps = sourcesum * pumass
 print("The WPu weapon source ({:.2f} years old, {:.1f}g) emits {:.1f} neutrons/s".format(age, pumass, nps))
 
@@ -95,7 +96,7 @@ for geom in geometries:
         tempdf['age'] = 0
         tempdf['type'] = "eigenvalue"
         tempdf['geometry'] = geom
-        tempdf['leak'] = leak.mean.flatten()[0]
+        tempdf['leak'] = ufloat(leak.mean.flatten()[0], leak.std_dev.flatten()[0])
         tempdf['k-combined'] = sp.k_combined
         ratedf = pd.concat([ratedf, tempdf])
 
@@ -121,7 +122,7 @@ for geom in geometries:
         tempdf['age'] = 0
         tempdf['type'] = "fixed-source"
         tempdf['geometry'] = geom
-        tempdf['leak'] = leak.mean.flatten()[0]
+        tempdf['leak'] = ufloat(leak.mean.flatten()[0], leak.std_dev.flatten()[0])
         tempdf['k-combined'] = np.nan
         ratedf = pd.concat([ratedf, tempdf])
 
@@ -149,8 +150,8 @@ for age in ages:
         tempdf.reset_index(inplace = True)
         tempdf['age'] = age
         tempdf['type'] = "eigenvalue"
-        tempdf['geometry'] = ""
-        tempdf['leak'] = leak.mean.flatten()[0]
+        tempdf['geometry'] = "full (age)"
+        tempdf['leak'] = ufloat(leak.mean.flatten()[0], leak.std_dev.flatten()[0])
         tempdf['k-combined'] = sp.k_combined
         ratedf = pd.concat([ratedf, tempdf])
 
@@ -215,8 +216,8 @@ for age in ages:
         tempdf.reset_index(inplace = True)
         tempdf['age'] = age
         tempdf['type'] = "fixed-source"
-        tempdf['geometry'] = ""
-        tempdf['leak'] = leak.mean.flatten()[0]
+        tempdf['geometry'] = "full (age)"
+        tempdf['leak'] = ufloat(leak.mean.flatten()[0], leak.std_dev.flatten()[0])
         tempdf['k-combined'] = sp.k_combined
         ratedf = pd.concat([ratedf, tempdf])
         
@@ -269,31 +270,60 @@ for age in ages:
         # tempdf['age'] = age
         # sourcedf = pd.concat([sourcedf, tempdf])
 
-ratedf['nproduction'] = ratedf[('mean', 'nu-fission')] + ratedf[('mean', 'nu-scatter')] - ratedf[('mean', 'scatter')]
-ratedf['nproduction2'] = ratedf[('mean', 'nu-fission')] + ratedf[('mean', '(n,2n)')] + 2 * ratedf[('mean', '(n,3n)')]
+scores = ['absorption', 'fission', 'scatter', 'total', 
+          '(n,2nd)', '(n,2n)', '(n,3n)', '(n,na)', '(n,n3a)', '(n,2na)',
+          '(n,3na)', '(n,np)', '(n,n2a)', '(n,2n2a)', '(n,nd)', '(n,nt)',
+          '(n,n3He)', '(n,nd2a)', '(n,nt2a)', '(n,4n)', '(n,2np)',
+          '(n,3np)', '(n,n2p)',
+          '(n,gamma)', '(n,p)', '(n,t)', '(n,3He)', '(n,a)',
+          '(n,2a)', '(n,3a)', '(n,2p)', '(n,pa)', '(n,t2a)', '(n,d2a)',
+          '(n,pd)', '(n,pt)', '(n,da)',
+          'nu-fission', 'nu-scatter'
+]
+for s in scores:
+    mean = ratedf[('mean', s)].values
+    std = ratedf[('std. dev.', s)].values
+    ratedf[s] = [ufloat(x[0], x[1]) for x in zip(mean, std)]
+    ratedf.drop(columns = [('mean', s), ('std. dev.', s)], inplace = True)
 
-ratedf['keff'] = ratedf['nproduction'] / (ratedf[('mean', 'absorption')] + ratedf['leak'])
-ratedf['fissionkeff'] = ratedf[('mean', 'nu-fission')] / (ratedf[('mean', 'absorption')] + ratedf['leak'])
+ratedf['nproduction'] = ratedf['nu-fission'] + ratedf['nu-scatter'] - ratedf['scatter']
+ratedf['nproduction2'] = ratedf['nu-fission'] + ratedf['(n,2n)'] + 2 * ratedf['(n,3n)']
+
+ratedf['keff'] = ratedf['nproduction'] / (ratedf['absorption'] + ratedf['leak'])
+ratedf['fissionkeff'] = ratedf['nu-fission'] / (ratedf['absorption'] + ratedf['leak'])
 ratedf['M'] = 1 / (1 - ratedf['keff'])
 ratedf['fissionM'] = 1 / (1 - ratedf['fissionkeff'])
 ratedf['p_L'] = ratedf['leak'] / ratedf['M']
-ratedf['p_c'] = (ratedf[('mean', 'absorption')] - ratedf[('mean', 'fission')]) / ratedf['M']
-ratedf['p'] = ratedf[('mean', 'fission')] / ratedf['M']
+ratedf['p_c'] = (ratedf['absorption'] - ratedf['fission']) / ratedf['M']
+ratedf['p'] = ratedf['fission'] / ratedf['M']
 
-ratedf['producingabsorption'] = ratedf[('mean', 'fission')] + ratedf[('mean', '(n,2n)')]
+ratedf['producingabsorption'] = ratedf['fission'] + ratedf['(n,2n)']
 ratedf['totalnu'] = ratedf['nproduction'] / ratedf['producingabsorption']
-ratedf['fissionnu'] = ratedf[('mean', 'nu-fission')] / ratedf[('mean', 'fission')]
-ratedf['capture'] = ratedf[('mean', 'absorption')] - ratedf['producingabsorption']
+ratedf['fissionnu'] = ratedf['nu-fission'] / ratedf['fission']
+ratedf['capture'] = ratedf['absorption'] - ratedf['producingabsorption']
 
 ratedf['tp_c'] = ratedf['capture'] / ratedf['M']
 ratedf['tp'] = ratedf['producingabsorption'] / ratedf['M']
 
-ratedf['serber-alpha'] = ratedf['capture'] / ratedf[('mean', 'fission')]
-ratedf['serber-fissionalpha'] = (ratedf[('mean', 'absorption')] - ratedf[('mean', 'fission')]) / ratedf[('mean', 'fission')]
+ratedf['serber-alpha'] = ratedf['capture'] / ratedf['fission']
+ratedf['serber-fissionalpha'] = (ratedf['absorption'] - ratedf['fission']) / ratedf['fission']
 ratedf['serber-M_L'] = 1 + ratedf['producingabsorption'] * (ratedf['totalnu'] - 1 - ratedf['serber-alpha'])
-ratedf['serber-fissionM_L'] = 1 + ratedf[('mean', 'fission')] * (ratedf['fissionnu'] - 1 - ratedf['serber-fissionalpha'])
+ratedf['serber-fissionM_L'] = 1 + ratedf['fission'] * (ratedf['fissionnu'] - 1 - ratedf['serber-fissionalpha'])
 ratedf['reilly-M_L'] = (1 - ratedf['tp'] - ratedf['tp_c']) / (1 - ratedf['tp'] * ratedf['totalnu'])
 
+################################################################################
+ratedf.set_index(['type', 'geometry', 'age'], inplace = True)
+################################################################################
+print("********************************************************************************")
+print("  keff = {}".format(ratedf.loc[('fixed-source', 'full', 0), 'keff'].values[0]))
+print("     M = {}".format(ratedf.loc[('fixed-source', 'full', 0), 'M'].values[0]))
+print("  leak = {}".format(ratedf.loc[('fixed-source', 'full', 0), 'leak'].values[0]))
+print()
+print("   source rate = {:.0f} neutrons / s".format(nps))
+print("  leakage rate = {:.0f} neutrons / s".format(nps * ratedf.loc[('fixed-source', 'full', 0), 'leak'].values[0]))
+print("   source rate = {:.2u} neutrons / s".format(nps))
+print("  leakage rate = {:.2u} neutrons / s".format(nps * ratedf.loc[('fixed-source', 'full', 0), 'leak'].values[0]))
+print("********************************************************************************")
 ################################################################################
 # print(fluxdf[(fluxdf['type'] == 'fixed-source') & (fluxdf['cell'] == 7)])
 
@@ -333,10 +363,10 @@ meanvalues = tempdf[tempdf['surface'] == tempdf['cellfrom']]['mean'].values
 surfaces = surfaces[1:-1]
 meanvalues = meanvalues[1:-1]
 
-ax[0][0].bar(surfaces, meanvalues * nps)
+ax[0][0].bar(surfaces, meanvalues * nps.n)
 # ax[0][0].title.set_text("Outward current through cell surface")
 ax[0][0].axes.set_ylabel("current [neutrons / s]")
-ax[0][0].axhline(nps, color = "orange", linewidth = 2)
+ax[0][0].axhline(nps.n, color = "orange", linewidth = 2)
 # ax[0][0].axes.set_xlabel("from Cell")
 ax[0][0].grid()
 fig.autofmt_xdate()
@@ -344,7 +374,7 @@ fig.autofmt_xdate()
 fluxdfsel = fluxdf[(fluxdf['cell'] == 7) & (fluxdf['type'] == 'fixed-source') & (fluxdf['age'] == 0)]
 xvalues = ((fluxdfsel['energy low [eV]'] + fluxdfsel['energy low [eV]']) / 2).values
 plotvalues = fluxdfsel['mean'].values
-plotvalues *= nps
+plotvalues *= nps.n
 
 sourcevalues = newsourcedf['mean'].values
 factor = 10
