@@ -23,7 +23,7 @@ else:
 
 pumass = 4000
 cosmicneutronsperm2 = 120
-days = 2
+days = 1
 
 plotpath = os.path.join("plots", "bust")
 if not os.path.exists(plotpath):
@@ -147,13 +147,95 @@ print("The ground is at z={:.2f}cm".format(groundfloorlevel))
 print("A detector on the ground will be in mesh cell with z-index {:d}".format(groundfloormeshid))
 
 ################################################################################
+# Combined plot
+m = 3
+plotz = 3
+
+tmin = 1
+tmax = 24 * 3600
+
+vmin = 0.0001
+vmax = 10 ** (math.ceil(math.log(shieldedcosmiccurrentdata.max(), 10)))
+
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+factor = 1
+fig, ax = plt.subplots(nrows = 1, ncols = 3, squeeze = False,
+                       # gridspec_kw = {'width_ratios': [10, 10, 1, 10, 1]},
+                       # sharey = True,
+                       figsize = (12 * factor, 3.5 * factor)
+)
+
+data = shieldedcurrentdata[plotz]
+im = ax[0, 0].imshow(data,
+                     norm=LogNorm(vmin = vmin, vmax = vmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+ax[0, 0].set_xlim(70, 130)
+ax[0, 0].set_ylim(70, 130)
+divider = make_axes_locatable(ax[0, 0])
+cax1 = divider.append_axes("right", size="5%", pad=0.05)
+fig.colorbar(im, cax = cax1,
+             label = "Inward Current [neutron/s]")
+data = shieldedcosmiccurrentdata[plotz]
+im = ax[0, 1].imshow(data,
+                     norm=LogNorm(vmin = vmin, vmax = vmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+ax[0, 1].set_xlim(70, 130)
+ax[0, 1].set_ylim(70, 130)
+
+divider = make_axes_locatable(ax[0, 1])
+cax2 = divider.append_axes("right", size="5%", pad=0.05)
+fig.colorbar(im, cax = cax2,
+             label = "Inward Current [neutron/s]")
+
+data = m ** 2 * shieldedcosmiccurrentdata[plotz] / (shieldedcurrentdata[plotz] ** 2)
+data[data == np.inf] = 0
+im = ax[0, 2].imshow(data,
+                     norm=LogNorm(vmin = tmin, vmax = tmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+ax[0, 2].set_xlim(70, 130)
+ax[0, 2].set_ylim(70, 130)
+divider = make_axes_locatable(ax[0, 2])
+cax3 = divider.append_axes("right", size="5%", pad=0.05)
+fig.colorbar(im, cax = cax3,
+             label = "Measurement Time [s]")
+
+ax[0, 0].set_ylabel("y-axis [m]")
+ax[0, 0].set_xlabel("x-axis [m]")
+ax[0, 1].set_xlabel("x-axis [m]")
+ax[0, 2].set_xlabel("x-axis [m]")
+
+pad = 5
+ax[0, 0].annotate("Büchel PSA", xy=(0, 0.5), xytext=(-ax[0, 0].yaxis.labelpad - pad, 0),
+                  xycoords=ax[0, 0].yaxis.label, textcoords='offset points',
+                  size='large', ha='right', va='center', rotation = 90)
+
+ax[0, 0].annotate("Source: Weapon", xy=(0.5, 1), xytext=(0, pad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+ax[0, 1].annotate("Source: Cosmic", xy=(0.5, 1), xytext=(0, pad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+ax[0, 2].annotate("Measurement Time", xy=(0.5, 1), xytext=(0, pad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+
+fig.tight_layout()
+plt.savefig(os.path.join(plotpath, "buechel-storage-combined-shielded-z-{}-{}stddev.png".format(plotz, m)))
+plt.savefig(os.path.join(plotpath, "buechel-storage-combined-shielded-z-{}-{}stddev.pdf".format(plotz, m)))
+plt.show()
+
+################################################################################
 # Plot measurement times for 3 std dev (shielded) one level
 m = 3
 
 vmax = 24 * 3600 * days
 
 for z in range(zwidth):
-    fig, ax = plt.subplots(nrows = 1, ncols = 1, squeeze = False)
+    fig, ax = plt.subplots(nrows = 1, ncols = 1, squeeze = False, figsize = (4, 4))
     data = m ** 2 * shieldedcosmiccurrentdata[z] / (shieldedcurrentdata[z] ** 2)
     data[data == np.inf] = 0
     im = ax[0, 0].imshow(data, norm=LogNorm(vmax = vmax), cmap=my_cmap)
@@ -164,7 +246,7 @@ for z in range(zwidth):
     plt.ylim(70, 130)
     plt.savefig(os.path.join(plotpath, "buechel-storage-z-{}-shielded-measurement-time-{}stddev.png".format(z, m)))
     plt.savefig(os.path.join(plotpath, "buechel-storage-z-{}-shielded-measurement-time-{}stddev.pdf".format(z, m)))
-    plt.show()
+    # plt.show()
     plt.close()
 
 ################################################################################
@@ -173,7 +255,7 @@ for z in range(zwidth):
 # vmax = 10 ** (math.ceil(math.log(currentdata.max(), 10)) - 1)
 
 for z in range(zwidth):
-    fig, ax = plt.subplots(nrows = 1, ncols = 1, squeeze = False)
+    fig, ax = plt.subplots(nrows = 1, ncols = 1, squeeze = False, figsize = (4, 4))
     data = shieldedcurrentdata[z]
     data[data == np.inf] = 0
     im = ax[0, 0].imshow(data, norm=LogNorm(), cmap=my_cmap)
@@ -193,7 +275,7 @@ for z in range(zwidth):
 # vmax = 10 ** (math.ceil(math.log(currentdata.max(), 10)) - 1)
 
 for z in range(zwidth):
-    fig, ax = plt.subplots(nrows = 1, ncols = 1, squeeze = False)
+    fig, ax = plt.subplots(nrows = 1, ncols = 1, squeeze = False, figsize = (4, 4))
     data = shieldedcosmiccurrentdata[z]
     data[data == np.inf] = 0
     im = ax[0, 0].imshow(data, norm=LogNorm(), cmap=my_cmap)
@@ -234,6 +316,7 @@ fig.colorbar(im, cax=cbar_ax)
 plt.savefig(os.path.join(plotpath, "buechel-storage-neutron-flux.png"))
 #plt.show()
 plt.close()
+
 
 ################################################################################
 # Plot measurement times for 1 std dev
