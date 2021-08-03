@@ -313,8 +313,11 @@ ratedf['reilly-M_L'] = (1 - ratedf['tp'] - ratedf['tp_c']) / (1 - ratedf['tp'] *
 
 ################################################################################
 ratedf.set_index(['type', 'geometry', 'age'], inplace = True)
+
 ################################################################################
 print("********************************************************************************")
+print("  Results for full geometry, and a new weapon (age 0 years)")
+print()
 print("  keff = {}".format(ratedf.loc[('fixed-source', 'full', 0), 'keff'].values[0]))
 print("     M = {}".format(ratedf.loc[('fixed-source', 'full', 0), 'M'].values[0]))
 print("  leak = {}".format(ratedf.loc[('fixed-source', 'full', 0), 'leak'].values[0]))
@@ -325,7 +328,6 @@ print("   source rate = {:.2u} neutrons / s".format(nps))
 print("  leakage rate = {:.2u} neutrons / s".format(nps * ratedf.loc[('fixed-source', 'full', 0), 'leak'].values[0]))
 print("********************************************************************************")
 ################################################################################
-# print(fluxdf[(fluxdf['type'] == 'fixed-source') & (fluxdf['cell'] == 7)])
 
 fluxdf['mean per volume'] = 0
 for i in range(1, 8):
@@ -340,11 +342,6 @@ fluxdf['lethargy low per volume'] = fluxdf['mean per volume'] * fluxdf['energy l
 fluxdf['cell name'] = ""
 for cellid in fluxdf['cell'].unique():
     fluxdf.loc[fluxdf['cell'] == cellid, 'cell name'] = summary.geometry.get_all_cells()[cellid].name
-
-################################################################################
-# compare keff
-
-print(ratedf[['type', 'geometry', 'age', 'k-combined', 'keff', 'fissionkeff', 'M', 'fissionM', 'leak']])
 
 ################################################################################
 # Outward cell current for age = 0, and energy distribution in vacuum by age
@@ -401,226 +398,3 @@ plt.savefig(os.path.join("plots-for-paper", "outward-current-flux.pdf"))
 plt.show()
 
 
-################################################################################
-# Understanding currents
-currentdfsel = currentdf[(currentdf['age'] == 0) & (currentdf['type'] == 'fixed-source')]
-tempdf = currentdfsel.groupby(['surface', 'cellfrom']).sum()
-tempdf.reset_index(inplace = True)
-tempdf['absmean'] = np.abs(tempdf['mean'])
-
-print("#################### CellFromFilter ####################")
-calccellfrom = tempdf.groupby(['cellfrom']).sum()
-cellfrom = plaincurrentdf[~plaincurrentdf['cellfrom'].isna()]
-cellfrom = cellfrom[(cellfrom['age'] == 0) & (cellfrom['type'] == 'fixed-source')]
-print(calccellfrom)
-print(cellfrom)
-
-print("#################### SurfaceFilter ####################")
-calcsurface = tempdf.groupby(['surface']).sum()
-surface = plaincurrentdf[~plaincurrentdf['surface'].isna()]
-surface = surface[(surface['age'] == 0) & (surface['type'] == 'fixed-source')]
-print(calcsurface)
-print(surface)
-
-print("#################### CellFilter ####################")
-calccelllist = []
-for i in range(1, 8):
-    intoout = tempdf[(tempdf['surface'] == i - 1) & (tempdf['cellfrom'] == i - 1)]['absmean']
-    outtoin = tempdf[(tempdf['surface'] == i) & (tempdf['cellfrom'] == i + 1)]['absmean']
-    both = pd.concat([intoout,outtoin])
-    val = both.sum()
-    calccelllist.append(val)
-calccell = pd.DataFrame({"cell": range(1, 8), "absmean": calccelllist})
-cell = plaincurrentdf[~plaincurrentdf['cell'].isna()]
-cell = cell[(cell['age'] == 0) & (cell['type'] == 'fixed-source')]
-print(calccell)
-print(cell)
-
-################################################################################
-# Plot surface & cell current
-fig, ax = plt.subplots(2, 2, figsize=(10, 10), sharey = True)
-
-currentdfsel = currentdf[(currentdf['age'] == 0) & (currentdf['type'] == 'fixed-source')]
-surfaces = currentdfsel['surface'].unique()
-totaldf = currentdfsel.groupby(['surface']).sum()
-meanvalues = totaldf['mean'].values
-
-ax[0][0].bar(surfaces, meanvalues)
-ax[0][0].title.set_text("Current through surfaces")
-
-cellcurrentdf = plaincurrentdf[~plaincurrentdf['cell'].isna()]
-cellcurrentdfsel = cellcurrentdf[(cellcurrentdf['age'] == 0) & (cellcurrentdf['type'] == 'fixed-source')]
-cells = cellcurrentdfsel['cell'].unique()
-totaldf = cellcurrentdfsel.groupby(['cell']).sum()
-meanvalues = totaldf['mean'].values
-
-ax[0][1].bar(cells, meanvalues)
-ax[0][1].title.set_text("Current through cells")
-
-currentdfsel = currentdf[(currentdf['age'] == 0) & (currentdf['type'] == 'fixed-source')]
-tempdf = currentdfsel.groupby(['surface', 'cellfrom']).sum()
-tempdf.reset_index(inplace = True)
-surfaces = tempdf['surface'].unique()
-meanvalues = tempdf[tempdf['surface'] == tempdf['cellfrom']]['mean'].values
-
-ax[1][0].bar(surfaces, meanvalues)
-ax[1][0].title.set_text("Outward current per surface")
-
-currentdfsel = currentdf[(currentdf['age'] == 0) & (currentdf['type'] == 'fixed-source')]
-tempdf = currentdfsel.groupby(['surface', 'cellfrom']).sum()
-tempdf.reset_index(inplace = True)
-surfaces = tempdf['surface'].unique()
-meanvalues = -tempdf[tempdf['surface'] == tempdf['cellfrom'] - 1]['mean'].values
-meanvalues = np.append(meanvalues, 0)
-ax[1][1].bar(surfaces, meanvalues)
-ax[1][1].title.set_text("Inward current per surface")
-
-
-fig.autofmt_xdate()
-ax[0][0].grid()
-ax[0][1].grid()
-ax[1][0].grid()
-ax[1][1].grid()
-plt.show()
-
-##
-fluxdfsel = fluxdf[(fluxdf['age'] == 0) & (fluxdf['type'] == 'fixed-source')]
-fig, ax = plt.subplots(2, 2, figsize=(16, 16))
-# for label, df in fluxdfsel.groupby('cell name'):
-#     df.plot(x = 'energy low [eV]',
-#             y = 'mean',
-#             ax = ax[0][0],
-#             logx = True,
-#             logy = True,
-#             label = label)
-#     df.plot(x = 'energy low [eV]',
-#             y = 'lethargy low',
-#             ax = ax[1][0],
-#             logx = True,
-#             logy = True,
-#             label = label)
-for label, df in fluxdfsel.groupby('cell'):
-    # if label <= 2:
-    #     print("****", label, "****")
-    #     print(df.iloc[0])
-    df.plot(x = 'energy low [eV]',
-            y = 'mean',
-            ax = ax[0][0],
-            logx = True,
-            logy = True,
-            label = summary.geometry.get_all_cells()[label].name)
-    df.plot(x = 'energy low [eV]',
-            y = 'lethargy low',
-            ax = ax[1][0],
-            logx = True,
-            logy = True,
-            label = summary.geometry.get_all_cells()[label].name)
-    df.plot(x = 'energy low [eV]',
-            y = 'mean per volume',
-            ax = ax[0][1],
-            logx = True,
-            logy = True,
-            label = summary.geometry.get_all_cells()[label].name)
-    df.plot(x = 'energy low [eV]',
-            y = 'lethargy low per volume',
-            ax = ax[1][1],
-            logx = True,
-            logy = True,
-            label = summary.geometry.get_all_cells()[label].name)
-ax[0][0].title.set_text("OpenMC result")
-ax[0][1].title.set_text("OpenMC result divided by cell volume")
-ax[0][0].legend() # necessary to reorder legend!
-ax[1][0].legend() # necessary to reorder legend!
-ax[0][1].legend()
-ax[1][1].legend()
-
-ax[0][0].grid()
-ax[1][0].grid()
-ax[0][1].grid()
-ax[1][1].grid()
-plt.show()
-
-
-fluxdfsel = fluxdf[(fluxdf['age'] == 0) & (fluxdf['type'] == 'fixed-source')]
-cells = fluxdfsel['cell name'].unique()
-totaldf = fluxdfsel.groupby(['cell']).sum()
-meanvalues = totaldf['mean'].values
-meanpervolumevalues = totaldf['mean per volume'].values
-
-fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-ax[0].bar(cells, meanvalues)
-ax[1].bar(cells, meanpervolumevalues)
-degress = 45
-fig.autofmt_xdate()
-ax[0].grid()
-ax[1].grid()
-plt.show()
-
-    
-fig, ax = plt.subplots(2, 2, figsize=(16, 16))
-for label, df in fluxdfsel.groupby('cell name'):
-    df.plot(x = 'energy low [eV]',
-            y = 'mean',
-            ax = ax[0][0],
-            logx = True,
-            logy = True,
-            label = label)
-    df.plot(x = 'energy low [eV]',
-            y = 'lethargy low',
-            ax = ax[1][0],
-            logx = True,
-            logy = True,
-            label = label)
-    df.plot(x = 'energy low [eV]',
-            y = 'mean per volume',
-            ax = ax[0][1],
-            logx = True,
-            logy = True,
-            label = label)
-    df.plot(x = 'energy low [eV]',
-            y = 'lethargy low per volume',
-            ax = ax[1][1],
-            logx = True,
-            logy = True,
-            label = label)
-ax[0][0].legend()
-ax[1][0].legend()
-ax[0][1].legend()
-ax[1][1].legend()
-ax[0][0].grid()
-ax[1][0].grid()
-ax[0][1].grid()
-ax[1][1].grid()
-plt.show()
-
-##
-fig, ax = plt.subplots()
-for label, df in sourcedf.groupby('age'):
-    df.plot(x = 'energy low [eV]',
-            y = 'p',
-            ax = ax,
-            logx = True,
-            label = label)
-ax.legend()
-plt.title("Source particle energies")
-plt.show()
-
-##
-fig, ax = plt.subplots()
-for label, df in sourcedf.groupby('age'):
-    df.plot(x = 'energy low [eV]',
-            y = 'p',
-            ax = ax,
-            logx = True,
-            label = label)
-ax.legend()
-
-# fluxdfsel = fluxdf[fluxdf['cell'] == 2]
-# for label, df in fluxdfsel.groupby('age'):
-#     df.plot(x = 'energy low [eV]',
-#             y = 'mean',
-#             ax = ax,
-#             logx = True,
-#             label = label)
-# ax.legend()
-plt.show()
