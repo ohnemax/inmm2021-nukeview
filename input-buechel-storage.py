@@ -642,6 +642,31 @@ if plot:
     yfactor = 1.2
     zfactor = 1.2
 
+    plotxwidth = 3000
+    plotzwidth = zmax - zmin
+    factor = plotzwidth / plotxwidth
+    mp = 1200
+    pixels = (mp, int(mp * factor))
+    plt.figure(figsize=(5, 5 * factor))
+    # root.plot(origin = (0, pasd4 + vaultt1 + vaultd3 / 2, (zmax - zmin) / 2),
+    root.plot(origin = (0, sourcey, (zmax - zmin) / 2),
+              basis=('xz'),
+              width=(plotxwidth, plotzwidth),
+              pixels=pixels,
+              seed = 1)
+    plt.xlabel("simulation x-axis [cm]")
+    plt.ylabel("simulation z-axis [cm]")
+    plt.tight_layout()
+    plt.savefig(os.path.join(basepath, "front-view-vault-zoom.png"))
+    plt.savefig(os.path.join(basepath, "front-view-vault-zoom.pdf"))
+    plt.close()
+
+    plt.figure(figsize=(8, 8))
+    root.plot(origin = (0, pasd4 + vaultt1 + vaultd3 / 2, (zmax - zmin) / 2), basis=('xz'), width=((xmax - xmin) * xfactor, (zmax - zmin) * zfactor), seed = 1)
+    plt.title("Front View, Vault position")
+    plt.savefig(os.path.join(basepath, "front-view-vault.png"))
+    plt.close()
+
     plt.figure(figsize=(8, 8))
     root.plot(origin = (sourcex, sourcey, sourcez),
               basis=('xz'),
@@ -668,11 +693,6 @@ if plot:
     plt.savefig(os.path.join(basepath, "front-view.png"))
     plt.close()
 
-    plt.figure(figsize=(8, 8))
-    root.plot(origin = (0, pasd4 + vaultt1 + vaultd3 / 2, (zmax - zmin) / 2), basis=('xz'), width=((xmax - xmin) * xfactor, (zmax - zmin) * zfactor), seed = 1)
-    plt.title("Front View, Vault position")
-    plt.savefig(os.path.join(basepath, "front-view-vault.png"))
-    plt.close()
 
     plt.figure(figsize=(8, 8))
     root.plot(origin = (0, ymin + (ymax - ymin) / 2, pash4 + pash1 + 1),
