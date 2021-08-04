@@ -151,90 +151,6 @@ print("Net current {:e}".format(weaponcellout - weaponcellin))
 
 centerlinedf = pd.DataFrame(centerlines)
 centerlinedf.set_index(['source', 'z'], inplace=True)
-# soilcurrentdf = tempdf[tempdf[('mesh 1', 'surf')].isin(['x-min in', 'x-max in', 'y-min in', 'y-max in', 'z-min in', 'z-max in'])]
-# soilcurrentdf = soilcurrentdf.groupby([('mesh 1', 'x'), ('mesh 1', 'y'), ('mesh 1', 'z')]).sum()
-# soilcurrentdf.reset_index(inplace = True)
-# soilcurrentdata = soilcurrentdf.sort_values([('mesh 1', 'z'), ('mesh 1', 'y'), ('mesh 1', 'x')])['mean'].to_numpy()
-# soilcurrentdata = soilcurrentdata.reshape((zwidth, ywidth, xwidth))
-# soilcurrentdata *= soilcosmicneutrons
-
-
-
-# load meshsurface fetter tally (current)
-
-
-# ycenter = math.floor(ywidth / 2)
-# xcenter = math.floor(xwidth / 2)
-
-# tempdf = soilfettertally.get_pandas_dataframe()
-# sdf = tempdf
-# soilfetterdata = soilfettertally.get_reshaped_data()
-# soilfetterdata = soilfetterdata.flatten().reshape((zwidth, ywidth, xwidth, 12))
-
-# selectdf = sdf[(sdf[('mesh 1', 'x')] == xcenter + 1) & (sdf[('mesh 1', 'y')] == ycenter + 1) & (sdf[('mesh 1', 'z')] == weaponz + 1)]
-# print(selectdf)
-# print(soilfetterdata[weaponz, ycenter, xcenter])
-
-
-
-
-# exit(-1)
-
-
-# centerdf = tempdf[(tempdf[('mesh 1', 'x')] == xcenter + 1) & (tempdf[('mesh 1', 'y')] == ycenter + 1) & (tempdf[('mesh 1', 'z')] == weaponz + 1)]
-# soilfettercurrentdf = tempdf[tempdf[('mesh 1', 'surf')].isin(['x-min in', 'x-max in', 'y-min in', 'y-max in', 'z-min in', 'z-max in'])]
-
-# soilfettercurrentdf = soilfettercurrentdf.groupby([('mesh 1', 'x'), ('mesh 1', 'y'), ('mesh 1', 'z')]).sum()
-# soilfettercurrentdf.reset_index(inplace = True)
-
-# soilfettercurrentdata = soilfettercurrentdf.sort_values([('mesh 1', 'z'), ('mesh 1', 'y'), ('mesh 1', 'x')])['mean'].to_numpy()
-# soilfettercurrentdata = soilfettercurrentdata.reshape((zwidth, ywidth, xwidth))
-# soilfettercurrentdata *= nps
-
-# soilfettercurrentdf = tempdf[tempdf[('mesh 1', 'surf')].isin(['x-min out', 'x-max out', 'y-min out', 'y-max out', 'z-min out', 'z-max out'])]
-# soilfettercurrentdf = soilfettercurrentdf.groupby([('mesh 1', 'x'), ('mesh 1', 'y'), ('mesh 1', 'z')]).sum()
-# soilfettercurrentdf.reset_index(inplace = True)
-# soilfetteroutcurrentdata = soilfettercurrentdf.sort_values([('mesh 1', 'z'), ('mesh 1', 'y'), ('mesh 1', 'x')])['mean'].to_numpy()
-# soilfetteroutcurrentdata = soilfetteroutcurrentdata.reshape((zwidth, ywidth, xwidth))
-# soilfetteroutcurrentdata *= nps
-
-
-
-
-# centerlinesel = centerlinedf[centerlinedf['source'] == "fetter-on-soil"]
-# for i in centerlinesel.index:
-#     plt.plot(range(xwidth), centerlinedf.loc[i, 'data'], label = centerlinedf.loc[i, 'z'])
-# plt.legend()
-# plt.show()
-# exit(-1)
-
-
-#*******************************************************************************
-# plot cosmic / fetter / one sigma measurement time
-factor = 3
-fig, ax = plt.subplots(nrows = 1, ncols = 3, squeeze = False, figsize=(4 * factor, 1 * factor))
-fig.subplots_adjust(left=0.02, bottom=0.06, right=0.95, top=0.94, wspace=0.05)
-
-vmin = soilcosmicdata[soilcosmicdata > 0].min()
-vmax = soilcosmicdata.max()
-
-im = ax[0, 0].imshow(soilcosmicdata[weaponz], norm=LogNorm(vmin = vmin, vmax = vmax), cmap=my_cmap)
-ax[0, 0].title.set_text("Cosmic ray neutron background level")
-fig.colorbar(im, ax = ax[0, 0])
-
-im = ax[0, 1].imshow(soilfetterdata[weaponz], norm=LogNorm(vmin = vmin, vmax = vmax), cmap=my_cmap)
-ax[0, 1].title.set_text("Neutron level from nuclear weapon")
-fig.colorbar(im, ax = ax[0, 1])
-
-tdata = soilcosmicdata[weaponz] / (soilfetterdata[weaponz] ** 2)
-im = ax[0, 2].imshow(tdata, norm=LogNorm(), cmap=my_cmap)
-ax[0, 2].title.set_text("One sigma measurement time (s)")
-fig.colorbar(im, ax = ax[0, 2])
-
-fig.tight_layout()
-plt.savefig(os.path.join(plotpath, "soil-measurement-times.png"))
-#plt.show()
-plt.close()
 
 ################################################################################
 print("LOADING CONCRETE DATA")
@@ -383,7 +299,7 @@ ax[0][0].plot(xvals, centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'], 
 ax[0][0].plot(xvals, centerlinedf.loc[('water', weaponz), 'data'], label="Water", color=colors[2])
 ax[0][0].plot(xvals, centerlinedf.loc[('fetter-on-water', weaponz), 'data'], "--", color=colors[2])
 
-ax[0][0].set_ylabel("Neutrons entering 1m^3 [1/s]")
+ax[0][0].set_ylabel("Current into 1 m$^3$ [neutrons/s]")
 ax[0][0].set_xlabel("Horizontal Distance [m]")
 
 ax[0][0].set_ylim(-100, 1100)
@@ -401,7 +317,7 @@ ax[0][1].plot(xvals, centerlinedf.loc[('fetter-on-soil', weaponz), 'data'], "--"
 ax[0][1].plot(xvals, centerlinedf.loc[('soil-shielded', weaponz), 'data'], label="Shielded", color=colors[1])
 ax[0][1].plot(xvals, centerlinedf.loc[('fetter-on-soil-shielded', weaponz), 'data'], "--", color=colors[1])
 
-ax[0][1].set_ylabel("Neutrons entering 1m^3 [1/s]")
+ax[0][1].set_ylabel("Current into 1 m$^3$ [neutrons/s]")
 ax[0][1].set_xlabel("Horizontal Distance [m]")
 
 ax[0][1].set_ylim(-100, 1100)
@@ -419,14 +335,6 @@ m = 5
 tdata1 = m ** 2 * centerlinedf.loc[('soil', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-soil', weaponz), 'data'] ** 2)
 tdata1[xcenter] = np.nan # no useful calculation possible here
 ax[0][2].plot(xvals, tdata1, label = "Soil - Unshielded")
-
-# tdata = m ** 2 * centerlinedf.loc[('concrete', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'] ** 2)
-# tdata[xcenter] = np.nan # no useful calculation possible here
-# ax[0][2].plot(xvals, tdata, label = "Concrete - Unshielded")
-
-# tdata = m ** 2 * centerlinedf.loc[('water', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-water', weaponz), 'data'] ** 2)
-# tdata[xcenter] = np.nan # no useful calculation possible here
-# ax[0][2].plot(xvals, tdata, label = "Water - Unshielded")
 
 tdata2 = m ** 2 * centerlinedf.loc[('soil-shielded', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-soil-shielded', weaponz), 'data'] ** 2)
 tdata2[xcenter] = np.nan # no useful calculation possible here
@@ -455,209 +363,4 @@ plt.savefig(os.path.join("plots-for-paper", "simple-cosmic-centerline.pdf"))
 plt.savefig(os.path.join("plots-for-paper", "simple-cosmic-centerline.png"))
 
 plt.show()
-
-
-
-#*******************************************************************************
-# plot center lines - selection
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz), 'data'], label="Weapon signal at weapon height - Soil")
-soil1m = centerlinedf.loc[('fetter-on-soil', weaponz), 'data'][xcenter + 1]
-xval = np.append(np.linspace(-xcenter, -0.5, num = 2 * xcenter), np.linspace(0.5, xcenter, num = 2 * xcenter))
-yval = [soil1m / r ** 2 for r in xval]
-plt.plot(xval + xcenter, yval, label="1/r^2")
-print(soil1m)
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'], label="Weapon signal at weapon height - Concrete")
-concrete1m = centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'][xcenter + 1]
-xval = np.append(np.linspace(-xcenter, -0.5, num = 2 * xcenter), np.linspace(0.5, xcenter, num = 2 * xcenter))
-yval = [concrete1m / r ** 2 for r in xval]
-plt.plot(xval + xcenter, yval, label="1/r^2")
-print(concrete1m)
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz), 'data'], label="Weapon signal at weapon height - Water")
-water1m = centerlinedf.loc[('fetter-on-water', weaponz), 'data'][xcenter + 1]
-xval = np.append(np.linspace(-xcenter, -0.5, num = 2 * xcenter), np.linspace(0.5, xcenter, num = 2 * xcenter))
-yval = [water1m / r ** 2 for r in xval]
-plt.plot(xval + xcenter, yval, label="1/r^2")
-print(water1m)
-
-plt.xlabel("horizontal distance")
-
-plt.legend()
-plt.show()
-
-#*******************************************************************************
-# plot center lines - selection - cosmic and fetter
-
-plt.plot(range(xwidth), centerlinedf.loc[('soil', weaponz), 'data'], label="Background signal at weapon height - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz), 'data'], label="Weapon signal at weapon height - Soil")
-
-plt.plot(range(xwidth), centerlinedf.loc[('concrete', weaponz), 'data'], label="Background signal at weapon height - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'], label="Weapon signal at weapon height - Concrete")
-
-plt.plot(range(xwidth), centerlinedf.loc[('water', weaponz), 'data'], label="Background signal at weapon height - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz), 'data'], label="Weapon signal at weapon height - Water")
-
-plt.xlabel("horizontal distance")
-
-plt.ylim(-100, 2100)
-plt.legend()
-plt.show()
-
-#*******************************************************************************
-# plot measurement time - one sigma
-
-tdata = centerlinedf.loc[('soil', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-soil', weaponz), 'data'] ** 2)
-plt.plot(range(xwidth), tdata, label = "Soil")
-
-tdata = centerlinedf.loc[('concrete', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'] ** 2)
-plt.plot(range(xwidth), tdata, label = "Concrete")
-
-tdata = centerlinedf.loc[('water', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-water', weaponz), 'data'] ** 2)
-plt.plot(range(xwidth), tdata, label = "Water")
-
-plt.xlabel("horizontal distance")
-
-plt.legend()
-plt.show()
-
-
-
-#*******************************************************************************
-# plot center lines - selection - cosmic
-plt.plot(range(xwidth), centerlinedf.loc[('soil', weaponz + 1), 'data'], label="Background signal 1m above weapon - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('soil', weaponz - 1), 'data'], label="Background signal 1m below height - Soil")
-
-plt.plot(range(xwidth), centerlinedf.loc[('concrete', weaponz + 1), 'data'], label="Background signal 1m above weapon - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('concrete', weaponz - 1), 'data'], label="Background signal 1m below weapon - Concrete")
-
-plt.plot(range(xwidth), centerlinedf.loc[('water', weaponz + 1), 'data'], label="Background signal 1m above weapon - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('water', weaponz -1), 'data'], label="Background signal 1m below weapon - Water")
-
-plt.xlabel("horizontal distance")
-
-plt.legend()
-plt.show()
-
-#*******************************************************************************
-# plot center lines - selection
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz - 1), 'data'], label="Weapon signal 1m below height - Soil")
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz - 1), 'data'], label="Weapon signal 1m below weapon - Concrete")
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz -1), 'data'], label="Weapon signal 1m below weapon - Water")
-
-plt.xlabel("horizontal distance")
-
-plt.legend()
-plt.show()
-
-#*******************************************************************************
-# plot center lines
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz), 'data'], label="Weapon signal at weapon height - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz + 3), 'data'], label="Weapon signal 3m above weapon - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz - 1), 'data'], label="Weapon signal 1m below height - Soil")
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'], label="Weapon signal at weapon height - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz + 3), 'data'], label="Weapon signal 3m above weapon - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz - 1), 'data'], label="Weapon signal 1m below weapon - Concrete")
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz), 'data'], label="Weapon signal at weapon height - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz + 3), 'data'], label="Weapon signal 3m above weapon - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz -1), 'data'], label="Weapon signal 1m below weapon - Water")
-
-plt.xlabel("horizontal distance")
-# plt.yscale("log")
-
-plt.legend()
-plt.show()
-
-#*******************************************************************************
-# plot center lines - logarithmic
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz), 'data'], label="Weapon signal at weapon height - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz + 3), 'data'], label="Weapon signal 3m above weapon - Soil")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-soil', weaponz - 1), 'data'], label="Weapon signal 1m below height - Soil")
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz), 'data'], label="Weapon signal at weapon height - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz + 3), 'data'], label="Weapon signal 3m above weapon - Concrete")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-concrete', weaponz - 1), 'data'], label="Weapon signal 1m below weapon - Concrete")
-
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz), 'data'], label="Weapon signal at weapon height - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz + 1), 'data'], label="Weapon signal 1m above weapon - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz + 3), 'data'], label="Weapon signal 3m above weapon - Water")
-plt.plot(range(xwidth), centerlinedf.loc[('fetter-on-water', weaponz -1), 'data'], label="Weapon signal 1m below weapon - Water")
-
-plt.xlabel("horizontal distance")
-plt.yscale("log")
-
-plt.legend()
-plt.show()
-
-
-
-
-# #*******************************************************************************
-
-# plotcols = math.ceil(math.sqrt(zwidth))
-# plotrows = math.ceil(zwidth / plotcols)
-# fig, ax = plt.subplots(nrows = plotrows, ncols = plotcols, squeeze = False, figsize=(20, 20))
-
-# vmin = soilcosmicdata[soilcosmicdata > 0].min()
-# vmax = soilcosmicdata.max()
-
-# for i in range(plotcols * plotrows):
-#     rowidx = i // plotcols
-#     colidx = i % plotcols
-#     print(i, rowidx, colidx)
-#     if i < zwidth:
-#         im = ax[rowidx, colidx].imshow(soilcosmicdata[i], norm=LogNorm(vmin = vmin, vmax = vmax), cmap=my_cmap)
-#         ax[rowidx, colidx].title.set_text("z={:d}, Max: {:.3e}".format(i, soilcosmicdata[i].max()))
-#     else:
-#         fig.delaxes(ax[rowidx, colidx])
-
-# fig.subplots_adjust(right=0.8)
-# cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-# fig.colorbar(im, cax=cbar_ax)
-        
-# plt.savefig(os.path.join(plotpath, "soil-current.png"))
-# #plt.close()
-# plt.show()
-
-
-# vmin = 0.1
-# vmax = 10 ** math.ceil(math.log(cosmicneutronsperm2, 10))
-# print(vmin, vmax)
-
-# plotcols = math.ceil(math.sqrt(len(soilfettercurrentdata)))
-# plotrows = math.ceil(len(soilfettercurrentdata) / plotcols)
-# fig, ax = plt.subplots(nrows = plotrows, ncols = plotcols, squeeze = False, figsize=(20, 20))
-# for i in range(plotcols * plotrows):
-#     rowidx = i // plotcols
-#     colidx = i % plotcols
-#     print(i, rowidx, colidx)
-#     if i < len(soilfettercurrentdata):
-#         im = ax[rowidx, colidx].imshow(soilfettercurrentdata[i], norm=LogNorm(vmin = vmin, vmax = vmax), cmap=my_cmap)
-#         ax[rowidx, colidx].title.set_text("z={:d}, Max: {:.3e}".format(i, soilfettercurrentdata[i].max()))
-#     else:
-#         fig.delaxes(ax[rowidx, colidx])
-        
-# fig.subplots_adjust(right=0.8)
-# cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-# fig.colorbar(im, cax=cbar_ax)
-
-# plt.savefig(os.path.join(plotpath, "soil-and-fetter-current.png"))
-# #plt.close()
-# plt.show()
 
