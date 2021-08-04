@@ -10,15 +10,15 @@ import shutil
 import openmc
 import helper
 
-cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
-cspathfetter = cspath
-basepath = "simple-cosmic-ray-neutrons"
-particles = 10000
+cspath = "/openmc/openmc-data/v0.12/jendl40he-mod/cross_sections.xml"
+cspathfetter = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
+basepath = "cluster-results/sicorayn-20210727-20M"
+particles = 20000000
 batches = 10
 plot = False
 survival = False
-discard = False
-maxenergy = 2e7
+discard = True
+maxenergy = 2e8
 weaponage = 0
 weightcutoff = 0.25
 
