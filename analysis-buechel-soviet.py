@@ -14,10 +14,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import helper
 
-bustbp = "cluster-results/bust-20210730-fetter-survival-50M"
-bustcosmicbp = "cluster-results/bust-20210730-cosmic-200MeV-discard-20M"
+bustbp = "cluster-results/bust-20210801-fetter-survival-0.05-200M"
+bustcosmicbp = "cluster-results/bust-20210801-cosmic-200MeV-discard-50M"
 sostbp = "cluster-results/sost-20210730-fetter-survival-50M"
-sostcosmicbp = "cluster-results/sost-20210730-cosmic-200MeV-discard-20M"
+sostcosmicbp = "cluster-results/sost-20210801-cosmic-200MeV-discard-50M"
 
 pumass = 4000
 cosmicneutronsperm2 = 120
