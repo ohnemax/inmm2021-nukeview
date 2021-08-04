@@ -8,21 +8,18 @@ import numpy as np
 import pandas as pd
 ###############################################################################
 
-import openmc
 import json
 import argparse
 
-
+import openmc
 
 import helper
 
-
-
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
-basepath = "fetter-20210728"
-particles = 1
+basepath = "cluster-results/fetter-20210803-1M"
+particles = 1000000
 batches = 100
-ages = [0, 5, 10, 15, 20, 25, 30, 35, 40]
+ages = [0]
 ages = [float(a) for a in ages]
 
 parser = argparse.ArgumentParser()
