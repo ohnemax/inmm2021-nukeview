@@ -14,7 +14,7 @@ import openmc
 
 import helper
 
-basepath = 'cluster-results/fetter-20210728-100k'
+basepath = 'cluster-results/fetter-20210803-1M'
 if len(sys.argv) == 2:
     basepath = sys.argv[1]
 
