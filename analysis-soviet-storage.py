@@ -18,8 +18,8 @@ if len(sys.argv) == 2:
     basepath = sys.argv[1]
     cosmicbasepath = ""
 else:
-    basepath = "cluster-results/sost-20210730-fetter-survival-50M"
-    cosmicbasepath = "cluster-results/sost-20210730-cosmic-200MeV-discard-20M"
+    basepath = "cluster-results/sost-20210801-fetter-survival-0.05-200M"
+    cosmicbasepath = "cluster-results/sost-20210801-cosmic-200MeV-discard-50M"
 
 pumass = 4000
 cosmicneutronsperm2 = 120
@@ -245,7 +245,7 @@ plt.savefig(os.path.join(plotpath, "soviet-storage-neutron-flux.png"))
 plt.close()
 
 ################################################################################
-# Plot measurement times for 1 std dev
+# Plot measurement times for 3 std dev
 m = 3
 
 plotcols = math.ceil(math.sqrt(len(fluxdata)))
@@ -276,7 +276,7 @@ plt.show()
 plt.close()
 
 ################################################################################
-# Plot measurement times for 1 std dev (shielded)
+# Plot measurement times for 3 std dev (shielded)
 m = 3
 
 plotcols = math.ceil(math.sqrt(len(fluxdata)))

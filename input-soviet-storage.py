@@ -10,17 +10,17 @@ import openmc
 import helper
 
 cspath = "/openmc/openmc-data/v0.12/lib80x_hdf5/cross_sections.xml"
-basepath = "sost-20210723-point"
-fettersource = False
+basepath = "cluster-results/sost-20210801-fetter-survival-0.05-200M"
+fettersource = True
 cosmicray = False
-particles = 1
+particles = 200000000
 batches = 10
 plot = False
 weaponage = 0 # years
-survival = False
+survival = True
 discard = False
 maxenergy = 2e7
-weightcutoff = 0.25
+weightcutoff = 0.05 #openmc default: 0.25
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--fetter", action="store_true",

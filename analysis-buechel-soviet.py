@@ -16,7 +16,7 @@ import helper
 
 bustbp = "cluster-results/bust-20210801-fetter-survival-0.05-200M"
 bustcosmicbp = "cluster-results/bust-20210801-cosmic-200MeV-discard-50M"
-sostbp = "cluster-results/sost-20210730-fetter-survival-50M"
+sostbp = "cluster-results/sost-20210801-fetter-survival-0.05-200M"
 sostcosmicbp = "cluster-results/sost-20210801-cosmic-200MeV-discard-50M"
 
 pumass = 4000
