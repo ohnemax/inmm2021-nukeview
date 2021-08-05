@@ -1,6 +1,6 @@
 # INMM 2021 "Fetter Model Revisited" - Inputs & Analysis
 
-This repository contains scripts to create input files and read results used for the article "Fetter Model Revisited: Detecting Nuclear Weapons 30 Years Later" by @ohnemax, @jelfes and @cfichtlscherer. The article was presented at the INMM \& ESARDA Joint Virtual Annual Meeting\\ August 23-26 \& August 30-September 1, 2021.
+This repository contains scripts to create input files and read results used for the article "Fetter Model Revisited: Detecting Nuclear Weapons 30 Years Later" by (@ohnemax)[https://github.com/ohnemax/], (@jelfes)[https://github.com/jelfes] and (@cfichtlscherer)[https://github.com/cfichtlscherer/]. The article was presented at the INMM \& ESARDA Joint Virtual Annual Meeting\\ August 23-26 \& August 30-September 1, 2021.
 
 All simulations use [OpenMC](https://docs.openmc.org/en/stable/), an open source Monte Carlo particle transport simulation. Certain parts also use [CRY](https://nuclear.llnl.gov/simulation/) as a special particle source [cry-with-openmc](https://github.com/ohnemax/cry-with-openmc). To carry out the simulations, the `cry-with-openmc` repository should be present in the same parent folder as this repository, and the library should be compiled.
 
