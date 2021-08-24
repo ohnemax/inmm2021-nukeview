@@ -4,6 +4,7 @@ import os
 import sys
 import copy
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import pandas as pd
 ###############################################################################
@@ -395,6 +396,45 @@ ax[0][1].grid()
 fig.tight_layout()
 plt.savefig(os.path.join("plots-for-paper", "outward-current-flux.png"))
 plt.savefig(os.path.join("plots-for-paper", "outward-current-flux.pdf"))
+plt.show()
+
+################################################################################
+# Outward cell current for age = 0 for presentation
+
+matplotlib.rcParams['font.sans-serif'] = "Fira Sans"
+matplotlib.rcParams['font.family'] = "sans-serif"
+
+factor = 0.5
+fig, ax = plt.subplots(nrows = 1, ncols = 1,
+                       figsize=(6 * factor, 4 * factor), squeeze = False)
+
+currentdfsel = currentdf[(currentdf['age'] == 0) & (currentdf['type'] == 'fixed-source')]
+tempdf = currentdfsel.groupby(['surface', 'cellfrom']).sum()
+tempdf.reset_index(inplace = True)
+surfaces = tempdf['surface'].unique()
+surfaces = [summary.geometry.get_all_cells()[s].name for s in surfaces]
+meanvalues = tempdf[tempdf['surface'] == tempdf['cellfrom']]['mean'].values
+#drop center & vacuum
+surfaces = surfaces[1:-1]
+meanvalues = meanvalues[1:-1]
+#rename surfaces for plot
+surfaceplotnames = {"Pit": "Pit", "Reflector": "Reflector", "Tamper": "Tamper",
+                    "Conventional Explosive": "Explosive",
+                    "Aluminum Case": "Aluminum"}
+print(surfaces)
+surfaces = [surfaceplotnames[s] for s in surfaces]
+print(surfaces)
+ax[0][0].bar(surfaces, meanvalues * nps.n / 1e6)
+# ax[0][0].title.set_text("Outward current through cell surface")
+ax[0][0].axes.set_ylabel("outward current\n [10$^6$ neutrons / s]")
+ax[0][0].axhline(nps.n / 1e6, color = "orange", linewidth = 2)
+# ax[0][0].axes.set_xlabel("from Cell")
+ax[0][0].grid()
+fig.autofmt_xdate()
+
+fig.tight_layout()
+plt.savefig(os.path.join("plots-for-presentation", "outward-current.png"), transparent = True)
+plt.savefig(os.path.join("plots-for-presentation", "outward-current.pdf"), transparent = True)
 plt.show()
 
 

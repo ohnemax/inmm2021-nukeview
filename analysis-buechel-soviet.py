@@ -352,3 +352,251 @@ plt.savefig(os.path.join("plots-for-paper", "buechel-soviet-combined-m{}.pdf".fo
 plt.savefig(os.path.join("plots-for-paper", "buechel-soviet-combined-m{}.png".format(m)))
 
 plt.show()
+
+################################################################################
+# Combined plot Büchel for Presentation
+m = 3
+bustplotz = 3
+pad = 0.5
+titlepad = 5
+colorbarsize = "8%"
+
+tmin = 1
+tmax = 24 * 3600
+
+factor = 0.8
+fig, ax = plt.subplots(nrows = 1, ncols = 3, squeeze = False,
+                       figsize = (12 * factor, 5 * factor),
+                       sharey = True
+)
+
+vmin = 0.0001
+vmax = 10 ** (math.ceil(math.log(bustshieldedcosmiccurrentdata.max(), 10)))
+
+data = bustshieldedcurrentdata[bustplotz]
+im = ax[0, 0].imshow(data,
+                     norm=LogNorm(vmin = vmin, vmax = vmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 0])
+cax1 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax1,
+             label = "Current into 1 m$^3$ [neutron/s]",
+             orientation="horizontal")
+
+data = bustshieldedcosmiccurrentdata[bustplotz]
+im = ax[0, 1].imshow(data,
+                     norm=LogNorm(vmin = vmin, vmax = vmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 1])
+cax2 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax2,
+             label = "Current into 1 m$^3$ [neutron/s]",
+             orientation="horizontal")
+
+data = m ** 2 * bustshieldedcosmiccurrentdata[bustplotz] / (bustshieldedcurrentdata[bustplotz] ** 2)
+data[data == np.inf] = 0
+im = ax[0, 2].imshow(data,
+                     norm=LogNorm(vmin = tmin, vmax = tmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 2])
+cax3 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax3,
+             label = "Measurement Time [s]",
+             orientation="horizontal")
+
+ax[0, 0].set_xlim(70, 130)
+ax[0, 0].set_ylim(70, 130)
+ax[0, 1].set_xlim(70, 130)
+ax[0, 1].set_ylim(70, 130)
+ax[0, 2].set_xlim(70, 130)
+ax[0, 2].set_ylim(70, 130)
+
+ax[0, 0].set_ylabel("[meters]")
+ax[0, 0].set_xlabel("[meters]")
+ax[0, 1].set_xlabel("[meters]")
+ax[0, 2].set_xlabel("[meters]")
+
+ax[0, 0].annotate("Source: Weapon", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+ax[0, 1].annotate("Source: Cosmic", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+ax[0, 2].annotate("Measurement Time", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+
+#plt.tight_layout()
+plt.savefig(os.path.join("plots-for-presentation", "buechel-m{}.pdf".format(m)), transparent=True)
+plt.savefig(os.path.join("plots-for-presentation", "buechel-m{}.png".format(m)), transparent=True)
+
+plt.show()
+
+################################################################################
+# Combined plot Soviet Storage for Presentation
+m = 3
+sostplotz1 = 2
+sostplotz2 = 7
+pad = 0.5
+titlepad = 5
+colorbarsize = "8%"
+
+tmin = 1
+tmax = 24 * 3600
+
+factor = 0.8
+fig, ax = plt.subplots(nrows = 1, ncols = 3, squeeze = False,
+                       figsize = (12 * factor, 5 * factor),
+                       sharey = True
+)
+
+vmin = 0.0001
+vmax = 10 ** (math.ceil(math.log(sostshieldedcosmiccurrentdata.max(), 10)))
+
+data = sostshieldedcurrentdata[sostplotz1]
+im = ax[0, 0].imshow(data,
+                     norm=LogNorm(vmin = vmin, vmax = vmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 0])
+cax1 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax1,
+             label = "Current into 1 m$^3$ [neutron/s]",
+             orientation="horizontal")
+
+data = sostshieldedcosmiccurrentdata[sostplotz1]
+im = ax[0, 1].imshow(data,
+                     norm=LogNorm(vmin = vmin, vmax = vmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 1])
+cax2 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax2,
+             label = "Current into 1 m$^3$ [neutron/s]",
+             orientation="horizontal")
+
+data = m ** 2 * sostshieldedcosmiccurrentdata[sostplotz1] / (sostshieldedcurrentdata[sostplotz1] ** 2)
+data[data == np.inf] = 0
+im = ax[0, 2].imshow(data,
+                     norm=LogNorm(vmin = tmin, vmax = tmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 2])
+cax3 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax3,
+             label = "Measurement Time [s]",
+             orientation="horizontal")
+
+ax[0, 0].set_xlim(70, 130)
+ax[0, 0].set_ylim(70, 130)
+ax[0, 1].set_xlim(70, 130)
+ax[0, 1].set_ylim(70, 130)
+ax[0, 2].set_xlim(70, 130)
+ax[0, 2].set_ylim(70, 130)
+
+ax[0, 0].set_ylabel("[meters]")
+ax[0, 0].set_xlabel("[meters]")
+ax[0, 1].set_xlabel("[meters]")
+ax[0, 2].set_xlabel("[meters]")
+
+ax[0, 0].annotate("Source: Weapon", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+ax[0, 1].annotate("Source: Cosmic", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+ax[0, 2].annotate("Measurement Time", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+
+#plt.tight_layout()
+plt.savefig(os.path.join("plots-for-presentation", "soviet-lower-m{}.pdf".format(m)), transparent=True)
+plt.savefig(os.path.join("plots-for-presentation", "soviet-lower-m{}.png".format(m)), transparent=True)
+
+plt.show()
+
+################################################################################
+# Combined plot Soviet Storage for Presentation
+m = 3
+sostplotz1 = 2
+sostplotz2 = 7
+pad = 0.5
+titlepad = 5
+colorbarsize = "8%"
+
+tmin = 1
+tmax = 24 * 3600
+
+factor = 0.8
+fig, ax = plt.subplots(nrows = 1, ncols = 3, squeeze = False,
+                       figsize = (12 * factor, 5 * factor),
+                       sharey = True
+)
+
+vmin = 0.0001
+vmax = 10 ** (math.ceil(math.log(sostshieldedcosmiccurrentdata.max(), 10)))
+
+data = sostshieldedcurrentdata[sostplotz2]
+im = ax[0, 0].imshow(data,
+                     norm=LogNorm(vmin = vmin, vmax = vmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 0])
+cax1 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax1,
+             label = "Current into 1 m$^3$ [neutron/s]",
+             orientation="horizontal")
+
+data = sostshieldedcosmiccurrentdata[sostplotz2]
+im = ax[0, 1].imshow(data,
+                     norm=LogNorm(vmin = vmin, vmax = vmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 1])
+cax2 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax2,
+             label = "Current into 1 m$^3$ [neutron/s]",
+             orientation="horizontal")
+
+data = m ** 2 * sostshieldedcosmiccurrentdata[sostplotz2] / (sostshieldedcurrentdata[sostplotz2] ** 2)
+data[data == np.inf] = 0
+im = ax[0, 2].imshow(data,
+                     norm=LogNorm(vmin = tmin, vmax = tmax),
+                     cmap=my_cmap,
+                     interpolation = 'none')
+divider = make_axes_locatable(ax[0, 2])
+cax3 = divider.append_axes("bottom", size=colorbarsize, pad=pad)
+fig.colorbar(im, cax = cax3,
+             label = "Measurement Time [s]",
+             orientation="horizontal")
+
+ax[0, 0].set_xlim(70, 130)
+ax[0, 0].set_ylim(70, 130)
+ax[0, 1].set_xlim(70, 130)
+ax[0, 1].set_ylim(70, 130)
+ax[0, 2].set_xlim(70, 130)
+ax[0, 2].set_ylim(70, 130)
+
+ax[0, 0].set_ylabel("[meters]")
+ax[0, 0].set_xlabel("[meters]")
+ax[0, 1].set_xlabel("[meters]")
+ax[0, 2].set_xlabel("[meters]")
+
+ax[0, 0].annotate("Source: Weapon", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+ax[0, 1].annotate("Source: Cosmic", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+ax[0, 2].annotate("Measurement Time", xy=(0.5, 1), xytext=(0, titlepad),
+                  xycoords='axes fraction', textcoords='offset points',
+                  size='large', ha='center', va='baseline')
+
+#plt.tight_layout()
+plt.savefig(os.path.join("plots-for-presentation", "soviet-upper-m{}.pdf".format(m)), transparent=True)
+plt.savefig(os.path.join("plots-for-presentation", "soviet-upper-m{}.png".format(m)), transparent=True)
+
+plt.show()

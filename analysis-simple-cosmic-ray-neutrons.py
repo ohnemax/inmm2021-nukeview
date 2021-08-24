@@ -364,3 +364,104 @@ plt.savefig(os.path.join("plots-for-paper", "simple-cosmic-centerline.png"))
 
 plt.show()
 
+#*******************************************************************************
+# plot cosmic / fetter on soil for presentation
+matplotlib.rcParams['font.sans-serif'] = "Fira Sans"
+matplotlib.rcParams['font.family'] = "sans-serif"
+
+factor = 2.7
+
+fig, ax = plt.subplots(nrows = 1, ncols = 2, squeeze = False, figsize=(2.4 * factor, 1 * factor))
+fig.subplots_adjust(left=0.02, bottom=0.06, right=0.95, top=0.94, wspace=0.05)
+
+vmin = soilcosmicdata[soilcosmicdata > 0].min()
+vmax = 10 ** math.ceil(math.log(soilcosmicdata.max(), 10) + 2)
+vmin = 1e-1
+vmax = 1e4
+print(vmax, vmin)
+
+im = ax[0, 0].imshow(soilcosmicdata[weaponz], norm=LogNorm(vmin = vmin, vmax = vmax), cmap=my_cmap)
+ax[0, 0].title.set_text("Cosmic-ray neutron background")
+ax[0, 0].set_ylabel("[meters]")
+ax[0, 0].set_xlabel("[meters]")
+fig.colorbar(im, ax = ax[0, 0])
+
+im = ax[0, 1].imshow(soilfetterdata[weaponz], norm=LogNorm(vmin = vmin, vmax = vmax), cmap=my_cmap)
+ax[0, 1].title.set_text("Signal from nuclear weapon")
+ax[0, 1].set_xlabel("[meters]")
+fig.colorbar(im, ax = ax[0, 1], label = "Current into 1 m$^3$ [neutrons/s]")#"neutrons entering 1m$^3$/s")
+
+fig.tight_layout()
+plt.savefig(os.path.join("plots-for-presentation", "soil.pdf"), transparent = True)
+plt.savefig(os.path.join("plots-for-presentation", "soil.png"), transparent = True)
+plt.show()
+
+#*******************************************************************************
+# make a comprehensive plot for presentation
+# left: weapon / background
+# center: shielded / unshielded
+# right: measurement time
+
+matplotlib.rcParams['font.sans-serif'] = "Fira Sans"
+matplotlib.rcParams['font.family'] = "sans-serif"
+
+factor = 3.2
+fig, ax = plt.subplots(nrows = 1, ncols = 2, squeeze = False, figsize=(2 * factor, 1 * factor))
+
+xvals = np.arange(xwidth) - xcenter
+ax[0][0].plot(xvals, centerlinedf.loc[('soil', weaponz), 'data'], label="Soil", color=colors[0])
+ax[0][0].plot(xvals, centerlinedf.loc[('soil-shielded', weaponz), 'data'], "--", label="Soil - Shielded", color=colors[0])
+
+ax[0][0].plot(xvals, centerlinedf.loc[('concrete', weaponz), 'data'], label="Concrete", color=colors[1])
+
+ax[0][0].plot(xvals, centerlinedf.loc[('water', weaponz), 'data'], label="Water", color=colors[2])
+
+ax[0][0].plot(xvals, centerlinedf.loc[('fetter-on-soil', weaponz), 'data'], label = "Weapon Signal", color=colors[4])
+
+ax[0][0].set_ylabel("Current into 1 m$^3$ [neutrons/s]")
+ax[0][0].set_xlabel("Horizontal Distance [m]")
+
+ax[0][0].set_ylim(-100, 1100)
+ax[0][0].set_xlim(0, 100)
+ax[0][0].grid()
+ax[0][0].legend(ncol=1)
+
+ax[0][0].title.set_text("Different Surface Materials")
+
+#*******************************************************************************
+# plot measurement time - five sigma
+
+m = 5
+tdata1 = m ** 2 * centerlinedf.loc[('soil', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-soil', weaponz), 'data'] ** 2)
+tdata1[xcenter] = np.nan # no useful calculation possible here
+ax[0][1].plot(xvals, tdata1, label = "Soil - Unshielded")
+
+tdata2 = m ** 2 * centerlinedf.loc[('soil-shielded', weaponz), 'data'] / (centerlinedf.loc[('fetter-on-soil-shielded', weaponz), 'data'] ** 2)
+tdata2[xcenter] = np.nan # no useful calculation possible here
+ax[0][1].plot(xvals, tdata2, label = "Soil - Shielded")
+
+ax[0][1].plot(xvals, tdata1 - tdata2, label = "Difference")
+
+ax[0][1].set_ylabel("Time [s]")
+ax[0][1].set_xlabel("Horizontal Distance [m]")
+
+ax[0][1].axhline(60, color = colors[6], linewidth = 2)
+ax[0][1].axhline(3600, color = colors[6], linewidth = 2)
+ax[0][1].axhline(3600 * 24, color = colors[6], linewidth = 2)
+
+ax[0][1].set_xlim(0, 100)
+ax[0][1].set_yscale("log")
+#ax[0][1].set_ylim(0, 100)
+ax[0][1].grid()
+ax[0][1].legend()
+
+ax[0][1].title.set_text("Measurement Time")
+
+fig.tight_layout()
+
+plt.savefig(os.path.join("plots-for-presentation", "simple-cosmic-centerline.pdf"), transparent = True)
+plt.savefig(os.path.join("plots-for-presentation", "simple-cosmic-centerline.png"), transparent = True)
+
+plt.show()
+
+
